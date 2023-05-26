@@ -2,3 +2,4 @@
 nxtp=lib/nxtp/packages/deployments/contracts/contracts/
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts
 @openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts
+@fuji-v2=lib/fuji-v2/packages/protocol/
