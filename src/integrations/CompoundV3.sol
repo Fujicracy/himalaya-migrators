@@ -32,6 +32,7 @@ contract CompoundV3 {
   }
 
   function borrowV3(
+    address user,
     uint256 amount,
     address debtAsset,
     address cMarketV3
@@ -40,7 +41,7 @@ contract CompoundV3 {
     returns (bool success)
   {
     // From Comet docs: "The base asset can be borrowed using the withdraw function"
-    ICompoundV3(cMarketV3).withdraw(debtAsset, amount);
+    ICompoundV3(cMarketV3).withdrawFrom(user, user, debtAsset, amount);
     success = true;
   }
 
