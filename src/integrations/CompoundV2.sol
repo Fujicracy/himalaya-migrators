@@ -55,7 +55,14 @@ contract CompoundV2 {
     return asset == 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
   }
 
-  function depositV2(uint256 amount, address asset, address cTokenAddr) internal returns (bool success) {
+  function depositV2(
+    uint256 amount,
+    address asset,
+    address cTokenAddr
+  )
+    internal
+    returns (bool success)
+  {
     _enterCollatMarket(cTokenAddr);
 
     uint256 balanceCTokenBefore = IERC20(cTokenAddr).balanceOf(address(this));
@@ -81,7 +88,14 @@ contract CompoundV2 {
     success = true;
   }
 
-  function borrowV2(uint256 amount, address asset, address cTokenAddr) internal returns (bool success) {
+  function borrowV2(
+    uint256 amount,
+    address asset,
+    address cTokenAddr
+  )
+    internal
+    returns (bool success)
+  {
     ICToken cToken = ICToken(cTokenAddr);
 
     uint256 status = cToken.borrow(amount);
@@ -96,7 +110,14 @@ contract CompoundV2 {
     success = true;
   }
 
-  function withdrawV2(uint256 amount, address asset, address cTokenAddr) internal returns (bool success) {
+  function withdrawV2(
+    uint256 amount,
+    address asset,
+    address cTokenAddr
+  )
+    internal
+    returns (bool success)
+  {
     ICToken cToken = ICToken(cTokenAddr);
 
     uint256 status = cToken.redeemUnderlying(amount);
@@ -111,7 +132,14 @@ contract CompoundV2 {
     success = true;
   }
 
-  function paybackV2(uint256 amount, address asset, address cTokenAddr) internal returns (bool success) {
+  function paybackV2(
+    uint256 amount,
+    address asset,
+    address cTokenAddr
+  )
+    internal
+    returns (bool success)
+  {
     if (_isWETH(asset)) {
       ICETH cETH = ICETH(cTokenAddr);
       // unwrap WETH to ETH
@@ -129,12 +157,26 @@ contract CompoundV2 {
     success = true;
   }
 
-  function getDepositBalanceV2(address user, address cTokenAddr) external view returns (uint256 balance) {
+  function getDepositBalanceV2(
+    address user,
+    address cTokenAddr
+  )
+    external
+    view
+    returns (uint256 balance)
+  {
     ICToken cToken = ICToken(cTokenAddr);
     balance = LibCompoundV2.viewUnderlyingBalanceOf(cToken, user);
   }
 
-  function getBorrowBalanceV2(address user, address cTokenAddr) external view returns (uint256 balance) {
+  function getBorrowBalanceV2(
+    address user,
+    address cTokenAddr
+  )
+    external
+    view
+    returns (uint256 balance)
+  {
     ICToken cToken = ICToken(cTokenAddr);
     balance = LibCompoundV2.viewBorrowingBalanceOf(cToken, user);
   }
