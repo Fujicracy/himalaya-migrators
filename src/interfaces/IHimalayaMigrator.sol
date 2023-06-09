@@ -20,6 +20,7 @@ interface IHimalayaMigrator {
     uint256 debtAmount;
     uint128 fromChain;
     uint128 toChain;
+    address himalaya;
   }
 
   function beginXMigration(Migration memory migration) external returns (bytes32 transferId);
