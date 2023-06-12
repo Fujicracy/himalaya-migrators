@@ -100,5 +100,4 @@ contract CompoundV3 {
       balance = ICompoundV3(cMarketV3).borrowBalanceOf(user);
     }
   }
-
 }
