@@ -131,23 +131,18 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, IXReceiv
   }
 
   function receiveXMigration(bytes memory data) public returns (bool) {
-    //TODO decode data
+    Migration memory migration = abi.decode(data, (Migration));
     //TODO check parameters
-    //TODO check what to do with decoded data
-    //right now just deposit on V3
 
-    //TODO define this dynamically - testing with cWETHV3
-    address toMarket = 0xA17581A9E3356d9A858b789D68B4d866e593aE94;
-    address owner = 0x4CCeBa2d7D2B4fdcE4304d3e09a1fea9fbEb1528; //ALICE
-    //TODO get this values dynamically
-    address asset = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; //WETH
-    uint256 amount = 100e18;
-
-    address debtAsset = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    uint256 debtAmount = 5e18;
-
-    if (isMarketV3[toMarket]) {
-      _handleInboundToV3(owner, toMarket, asset, amount, debtAsset, debtAmount);
+    if (isMarketV3[migration.toMarket]) {
+      _handleInboundToV3(
+        migration.owner,
+        migration.toMarket,
+        migration.asset,
+        migration.amount,
+        migration.debtAsset,
+        migration.debtAmount
+      );
     } else {
       revert("Market not supported");
     }
