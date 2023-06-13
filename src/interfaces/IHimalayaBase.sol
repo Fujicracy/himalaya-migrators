@@ -6,7 +6,7 @@ pragma solidity 0.8.15;
  *
  * @author Fujidao Labs
  *
- * @notice Defines interface for {HimalayaMigrator} migration operations.
+ * @notice Defines interface for {HimalayaBase} migration operations.
  */
 
 import {IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
