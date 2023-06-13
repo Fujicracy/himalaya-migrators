@@ -9,6 +9,8 @@ pragma solidity 0.8.15;
  * @notice Defines interface for {HimalayaMigrator} migration operations.
  */
 
+import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+
 interface IHimalayaMigrator {
   struct Migration {
     address owner;

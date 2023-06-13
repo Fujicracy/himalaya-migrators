@@ -61,13 +61,10 @@ contract HimalayaBase is IXReceiver, IHimalayaBase {
   {
     //TODO check params
 
-    //@dev asset of migration struct is the address on origin chain. We want the asset address on the destination chain
-    IHimalayaMigrator.Migration memory migration =
-      abi.decode(callData, (IHimalayaMigrator.Migration));
-    migration.asset = asset;
+    IHimalayaMigrator.Migration memory migration = abi.decode(callData, (IHimalayaMigrator.Migration));
 
     //Approve IHimalayaMigrator to pull funds
-    IERC20(migration.asset).safeApprove(migration.himalaya, migration.amount);
+    migration.assetDest.safeApprove(migration.himalaya, migration.amount);
 
     //Handle inbound
     IHimalayaMigrator(migration.himalaya).receiveXMigration(callData);
@@ -80,10 +77,10 @@ contract HimalayaBase is IXReceiver, IHimalayaBase {
     returns (bytes32 transferId)
   {
     //Pull funds from IHimalayaMigrator
-    IERC20(migration.asset).safeTransferFrom(msg.sender, address(this), migration.amount);
+    migration.assetOrigin.safeTransferFrom(msg.sender, address(this), migration.amount);
 
     //Approve connext to pull funds
-    IERC20(migration.asset).safeApprove(address(connext), migration.amount);
+    migration.assetOrigin.safeApprove(address(connext), migration.amount);
 
     //TODO
     transferId = connext.xcall(
@@ -92,7 +89,7 @@ contract HimalayaBase is IXReceiver, IHimalayaBase {
       // _to: address of the target contract
       migration.himalaya,
       // _asset: address of the token contract
-      migration.asset,
+      address(migration.assetOrigin),
       // _delegate: address that has rights to update the original slippage tolerance
       // by calling Connext's forceUpdateSlippage function
       migration.himalaya, //TODO check this parameter
