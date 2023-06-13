@@ -21,7 +21,7 @@ contract HimalayaBase is IXReceiver, IHimalayaBase {
   IConnext public immutable connext;
 
   //chainId => migrator
-  mapping(uint32 => address) public migrators;
+  mapping(uint256 => address) public migrators;
 
   constructor(address _connext) {
     connext = IConnext(_connext);
