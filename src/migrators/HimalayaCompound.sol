@@ -76,6 +76,12 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, IXReceiv
     external
     returns (bytes memory)
   {
+    //TODO check params
+
+    //@dev asset of migration struct is the address on origin chain. We want the asset address on the destination chain
+    Migration memory migration = abi.decode(callData, (Migration));
+    migration.asset = asset;
+
     //Handle inbound
     receiveXMigration(callData);
 
@@ -114,7 +120,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, IXReceiv
       // the maximum amount of slippage the user will accept in BPS, 30 == 0.3%
       30, //TODO implement this
       // _callData: empty because we're only sending funds
-      "" //TODO implement this
+      abi.encode(migration)
     );
   }
 
