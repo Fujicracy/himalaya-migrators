@@ -14,13 +14,13 @@ interface IHimalayaMigrator {
     address owner;
     address fromMarket;
     address toMarket;
-    address asset;
+    address asset; // address of asset on origin chain
     uint256 amount;
-    address debtAsset;
+    address debtAsset; //address of debtAsset on destination chain
     uint256 debtAmount;
     uint128 fromChain;
     uint128 toChain;
-    address himalaya;
+    address himalaya; //address of himalaya on destination chain
   }
 
   function beginXMigration(Migration memory migration) external returns (bytes32 transferId);
