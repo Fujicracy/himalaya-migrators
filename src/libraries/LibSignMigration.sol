@@ -1,0 +1,125 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+pragma solidity 0.8.15;
+
+/**
+ * @title LibSignMigration
+ *
+ * @author Fujidao Labs
+ *
+ * @notice Helper library for permit signing of lending-borrowing position migrations.
+ */
+
+import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {HimalayaBase} from "../permits/HimalayaPermits.sol";
+
+library LibSignMigration {
+  // solhint-disable-next-line var-name-mixedcase
+  bytes32 internal constant PERMIT_MIGRATION_TYPEHASH = keccak256(
+    string(
+      abi.encodePacked(
+        "MigrationPermit(",
+        "address owner,",
+        "uint48 fromChainId,",
+        "uint48 toChainId,",
+        "address fromMarket,",
+        "address toMarket,",
+        "IERC20 assetOrigin,",
+        "IERC20 assetDest,",
+        "uint256 amount,",
+        "IERC20 debtAssetOrigin,",
+        "IERC20 debtAssetDest,",
+        "uint256 debtAmount,",
+        "address himalaya,",
+        "uint48 nonce,",
+        "uint48 deadline"
+      )
+    )
+  );
+
+  struct MigrationPermit {
+    address owner;
+    uint48 fromChainId;
+    uint48 toChainId;
+    address fromMarket;
+    address toMarket;
+    IERC20 assetOrigin;
+    IERC20 assetDest;
+    uint256 amount;
+    IERC20 debtAssetOrigin;
+    IERC20 debtAssetDest;
+    uint256 debtAmount;
+    address himalaya;
+    uint48 nonce;
+    uint48 deadline;
+  }
+
+  /// @notice Returns the struct type of a permit used for `borrow()` or `withdraw()`.
+  function buildPermitStruct(
+    address owner,
+    uint48 fromChain,
+    uint48 toChain,
+    address fromMarket,
+    address toMarket,
+    IERC20 assetOrigin,
+    IERC20 assetDest,
+    uint256 amount,
+    IERC20 debtAssetOrigin,
+    IERC20 debtAssetDest,
+    uint256 debtAmount,
+    address himalaya
+  )
+    public
+    view
+    returns (MigrationPermit memory permit)
+  {
+    permit.owner = owner;
+    permit.fromChainId = fromChain;
+    permit.toChainId = toChain;
+    permit.fromMarket = fromMarket;
+    permit.toMarket = toMarket;
+    permit.assetOrigin = assetOrigin;
+    permit.assetDest = assetDest;
+    permit.amount = amount;
+    permit.debtAssetOrigin = debtAssetOrigin;
+    permit.debtAssetDest = debtAssetDest;
+    permit.debtAmount = debtAmount;
+    permit.himalaya = himalaya;
+    permit.nonce = HimalayaBase(himalaya).nonces(owner);
+    permit.deadline = block.timestamp + 1 days;
+  }
+
+  /// @notice Returns the hash of a permit-withdraw.
+  function getStructHashMigration(MigrationPermit memory permit) public pure returns (bytes32) {
+    return keccak256(
+      abi.encode(
+        PERMIT_MIGRATION_TYPEHASH,
+        permit.owner,
+        permit.fromChainId,
+        permit.toChainId,
+        permit.fromMarket,
+        permit.toMarket,
+        permit.assetOrigin,
+        permit.assetDest,
+        permit.amount,
+        permit.debtAssetOrigin,
+        permit.debtAssetDest,
+        permit.debtAmount,
+        permit.himalaya,
+        permit.nonce,
+        permit.deadline
+      )
+    );
+  }
+
+  /// @notice Returns the digest.
+  function getHashTypedDataV4Digest(
+    bytes32 domainSeparator,
+    bytes32 structHash
+  )
+    external
+    pure
+    returns (bytes32)
+  {
+    return keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+  }
+}
