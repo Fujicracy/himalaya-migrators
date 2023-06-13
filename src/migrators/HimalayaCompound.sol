@@ -64,15 +64,6 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, IXReceiv
    * @param originDomain the origin domain identifier according Connext nomenclature
    * @param callData the calldata that will get decoded and executed, see "Requirements"
    *
-   * @dev It does not perform authentication of the calling address. As a result of that,
-   * all txns go through Connext's fast path.
-   * If `xBundle` fails internally, this contract will send the received funds to {ConnextHandler}.
-   *
-   * Requirements:
-   * - `calldata` parameter must be encoded with the following structure:
-   *     > abi.encode(Action[] actions, bytes[] args)
-   * - actions: array of serialized actions to execute from available enum {IRouter.Action}.
-   * - args: array of encoded arguments according to each action. See {BaseRouter-internalBundle}.
    */
   function xReceive(
     bytes32 transferId,
@@ -85,9 +76,6 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, IXReceiv
     external
     returns (bytes memory)
   {
-    //TODO
-    //decode calldata
-
     //Handle inbound
     receiveXMigration(callData);
 
@@ -166,8 +154,6 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, IXReceiv
 
     //Withdraw funds from V2
     withdrawV2(amount, asset, fromMarket);
-
-    //TODO bridge funds to V3 on destination chain with call to deposit
 
     return true;
   }
