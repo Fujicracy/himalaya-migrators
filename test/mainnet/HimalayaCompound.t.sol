@@ -53,7 +53,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils {
     migration.debtAsset = address(0);
     migration.debtAmount = 0;
     migration.fromChain = 1;
-    migration.toChain = 127; //Polygon
+    migration.toChain = 137; //Polygon
     migration.himalaya = address(0); //TODO
 
     //approve himalayaCompound to pull cTokens
@@ -83,7 +83,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils {
     migration.debtAsset = USDC;
     migration.debtAmount = 100e6;
     migration.fromChain = 1;
-    migration.toChain = 127; //Polygon
+    migration.toChain = 137; //Polygon
     migration.himalaya = address(0); //TODO
 
     //approve himalayaCompound as operator on V3
