@@ -113,7 +113,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, IXReceiv
       migration.asset,
       // _delegate: address that has rights to update the original slippage tolerance
       // by calling Connext's forceUpdateSlippage function
-      migration.himalaya,
+      migration.himalaya, //TODO check this parameter
       // _amount: amount of tokens to transfer
       migration.amount,
       // _slippage: can be anything between 0-10000 because
