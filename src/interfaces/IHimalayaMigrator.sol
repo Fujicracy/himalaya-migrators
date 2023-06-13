@@ -14,9 +14,11 @@ interface IHimalayaMigrator {
     address owner;
     address fromMarket;
     address toMarket;
-    address asset; // address of asset on origin chain
+    IERC20 assetOrigin;
+    IERC20 assetDest;
     uint256 amount;
-    address debtAsset; //address of debtAsset on destination chain
+    IERC20 debtAssetOrigin;
+    IERC20 debtAssetDest;
     uint256 debtAmount;
     uint128 fromChain;
     uint128 toChain;
