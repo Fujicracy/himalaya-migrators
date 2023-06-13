@@ -11,7 +11,7 @@ import {IWETH9} from "@fuji-v2/src/abstracts/WETH9.sol";
 import {LibCompoundV2} from "@fuji-v2/src/libraries/LibCompoundV2.sol";
 import {ICToken} from "@fuji-v2/src/interfaces/compoundV2/ICToken.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {IHimalayaMigrator} from "../../src/interfaces/IHimalayaMigrator.sol";
+import {IHimalayaMigrator, Migration} from "../../src/interfaces/IHimalayaMigrator.sol";
 import {HimalayaCompound} from "../../src/migrators/HimalayaCompound.sol";
 import {ICompoundV3} from "@fuji-v2/src/interfaces/compoundV3/ICompoundV3.sol";
 import {HimalayaCompoundUtils} from "../HimalayaCompoundUtils.t.sol";
@@ -21,7 +21,6 @@ import {IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
  * @dev This contract tests the integration of CompoundV2 and CompoundV3.
  */
 contract HimalayaCompoundUnitTests is HimalayaCompoundUtils {
-
   function setUp() public {
     vm.createSelectFork("mainnet");
     compoundV2 = new CompoundV2();
@@ -45,7 +44,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils {
     //Migrate 100 WETH deposit position from CompoundV2 to CompoundV3
     uint256 balanceCTokenV2 = cETHV2.balanceOf(ALICE);
 
-    IHimalayaMigrator.Migration memory migration;
+    Migration memory migration;
     migration.owner = ALICE;
     migration.fromMarket = address(cETHV2);
     migration.toMarket = cWETHV3;
@@ -75,7 +74,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils {
     assertApproxEqAbs(compoundV3.getDepositBalanceV3(ALICE, WBTC, cUSDCV3), 100e18, 100e18 / 10);
 
     //Migrate 100 WETH deposit position from CompoundV3 on mainnet to CompoundV3 on other chain
-    IHimalayaMigrator.Migration memory migration;
+    Migration memory migration;
     migration.owner = ALICE;
     migration.fromMarket = cUSDCV3;
     migration.toMarket = cUSDCV3_Polygon;
@@ -97,7 +96,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils {
 
   function test_handleInboundToV3() public {
     //Migration from 100 WETH deposit position from CompoundV2 on other chain to CompoundV3 on mainnet
-    IHimalayaMigrator.Migration memory migration;
+    Migration memory migration;
     migration.owner = ALICE;
     migration.fromMarket = cUSDCV3_Polygon;
     migration.toMarket = cUSDCV3;

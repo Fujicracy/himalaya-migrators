@@ -9,7 +9,7 @@ pragma solidity 0.8.15;
  * @notice This contract allows migrating positions between Compound instances using Himalaya.
  */
 
-import {IHimalayaMigrator} from "../interfaces/IHimalayaMigrator.sol";
+import {IHimalayaMigrator, Migration} from "../interfaces/IHimalayaMigrator.sol";
 import {CompoundV2} from "../integrations/CompoundV2.sol";
 import {CompoundV3} from "../integrations/CompoundV3.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";

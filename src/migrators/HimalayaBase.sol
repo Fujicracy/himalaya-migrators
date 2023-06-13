@@ -9,13 +9,14 @@ pragma solidity 0.8.15;
  * @notice This contract allows Fuji Himalaya to receive calls from connext and handle migrations.
  */
 
-import {IHimalayaMigrator} from "../interfaces/IHimalayaMigrator.sol";
+import {IHimalayaMigrator, Migration} from "../interfaces/IHimalayaMigrator.sol";
 import {IHimalayaBase} from "../interfaces/IHimalayaBase.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IConnext, IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
+import {EIP712} from "../permits/EIP712.sol";
 
-contract HimalayaBase is IXReceiver, IHimalayaBase {
+contract HimalayaBase is IXReceiver, IHimalayaBase, EIP712 {
   using SafeERC20 for IERC20;
 
   IConnext public immutable connext;
@@ -52,8 +53,7 @@ contract HimalayaBase is IXReceiver, IHimalayaBase {
     //TODO check params
 
     //@dev asset of migration struct is the address on origin chain. We want the asset address on the destination chain
-    IHimalayaMigrator.Migration memory migration =
-      abi.decode(callData, (IHimalayaMigrator.Migration));
+    Migration memory migration = abi.decode(callData, (Migration));
     migration.asset = asset;
 
     //Handle inbound
@@ -62,14 +62,11 @@ contract HimalayaBase is IXReceiver, IHimalayaBase {
     return "";
   }
 
-  function xCall(IHimalayaMigrator.Migration memory migration)
-    external
-    returns (bytes32 transferId)
-  {
+  function xCall(Migration memory migration) external returns (bytes32 transferId) {
     //TODO
     transferId = connext.xcall(
       // _destination: Domain ID of the destination chain
-      uint32(migration.toChain),
+      uint32(migration.toChainId),
       // _to: address of the target contract
       migration.himalaya,
       // _asset: address of the token contract

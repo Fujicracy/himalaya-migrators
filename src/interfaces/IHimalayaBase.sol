@@ -10,10 +10,8 @@ pragma solidity 0.8.15;
  */
 
 import {IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
-import {IHimalayaMigrator} from "./IHimalayaMigrator.sol";
+import {IHimalayaMigrator, Migration} from "./IHimalayaMigrator.sol";
 
 interface IHimalayaBase is IXReceiver {
-  function xCall(IHimalayaMigrator.Migration memory migration)
-    external
-    returns (bytes32 transferId);
+  function xCall(Migration memory migration) external returns (bytes32 transferId);
 }
