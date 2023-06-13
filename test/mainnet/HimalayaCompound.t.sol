@@ -21,7 +21,6 @@ import {IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
  * @dev This contract tests the integration of CompoundV2 and CompoundV3.
  */
 contract HimalayaCompoundUnitTests is HimalayaCompoundUtils {
-
   function setUp() public {
     vm.createSelectFork("mainnet");
     compoundV2 = new CompoundV2();

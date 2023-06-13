@@ -70,12 +70,18 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
       revert("Market not supported");
     }
 
+    //Approve himalayaBase to pull funds
+    SafeERC20.safeApprove(IERC20(migration.asset), address(himalayaBase), migration.amount);
+
     transferId = himalayaBase.xCall(migration);
   }
 
   function receiveXMigration(bytes memory data) external returns (bool) {
     Migration memory migration = abi.decode(data, (Migration));
     //TODO check parameters
+
+    //Pull funds from HimalayaBase
+    SafeERC20.safeTransferFrom(IERC20(migration.asset), msg.sender, address(this), migration.amount);
 
     if (isMarketV3[migration.toMarket]) {
       _handleInboundToV3(

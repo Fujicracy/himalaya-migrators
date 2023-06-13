@@ -56,6 +56,9 @@ contract HimalayaBase is IXReceiver, IHimalayaBase {
       abi.decode(callData, (IHimalayaMigrator.Migration));
     migration.asset = asset;
 
+    //Approve IHimalayaMigrator to pull funds
+    IERC20(migration.asset).safeApprove(migration.himalaya, migration.amount);
+
     //Handle inbound
     IHimalayaMigrator(migration.himalaya).receiveXMigration(callData);
 
@@ -66,6 +69,12 @@ contract HimalayaBase is IXReceiver, IHimalayaBase {
     external
     returns (bytes32 transferId)
   {
+    //Pull funds from IHimalayaMigrator
+    IERC20(migration.asset).safeTransferFrom(msg.sender, address(this), migration.amount);
+
+    //Approve connext to pull funds
+    IERC20(migration.asset).safeApprove(address(connext), migration.amount);
+
     //TODO
     transferId = connext.xcall(
       // _destination: Domain ID of the destination chain
