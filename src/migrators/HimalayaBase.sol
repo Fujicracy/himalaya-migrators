@@ -23,8 +23,18 @@ contract HimalayaBase is IXReceiver, IHimalayaBase {
   //chainId => migrator
   mapping(uint256 => address) public migrators;
 
+  //chainId => domainIdConnext
+  mapping(uint256 => uint32) public domainIds;
+
   constructor(address _connext) {
     connext = IConnext(_connext);
+
+    //mainnet
+    domainIds[1] = 6648936;
+    //polygon
+    domainIds[137] = 1886350457;
+    //arbitrum
+    domainIds[42161] = 1634886255;
   }
 
   /**
@@ -78,7 +88,7 @@ contract HimalayaBase is IXReceiver, IHimalayaBase {
     //TODO
     transferId = connext.xcall(
       // _destination: Domain ID of the destination chain
-      uint32(migration.toChain),
+      domainIds[migration.toChain],
       // _to: address of the target contract
       migration.himalaya,
       // _asset: address of the token contract
