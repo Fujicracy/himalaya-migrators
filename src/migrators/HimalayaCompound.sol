@@ -14,18 +14,18 @@ import {CompoundV2} from "../integrations/CompoundV2.sol";
 import {CompoundV3} from "../integrations/CompoundV3.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {IConnext, IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
+import {IHimalayaBase} from "../interfaces/IHimalayaBase.sol";
 
-contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, IXReceiver {
+contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   using SafeERC20 for IERC20;
 
   mapping(address => bool) public isMarketV2;
   mapping(address => bool) public isMarketV3;
 
-  IConnext public immutable connext;
+  IHimalayaBase public immutable himalayaBase;
 
-  constructor(address _connext) {
-    connext = IConnext(_connext);
+  constructor(address _himalayaBase) {
+    himalayaBase = IHimalayaBase(_himalayaBase);
 
     isMarketV2[0xe65cdB6479BaC1e22340E4E755fAE7E509EcD06c] = true; //cAAVE
     isMarketV2[0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E] = true; //cBAT
@@ -54,41 +54,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, IXReceiv
     isMarketV3[0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA] = true; //arbitrum cUSDCV3
   }
 
-  /**
-   * @notice Called by Connext on the destination chain.
-   *
-   * @param transferId the unique identifier of the crosschain transfer
-   * @param amount the amount of transferring asset, after slippage, the recipient address receives
-   * @param asset the asset being transferred
-   * @param originSender the address of the contract or EOA that called xcall on the origin chain
-   * @param originDomain the origin domain identifier according Connext nomenclature
-   * @param callData the calldata that will get decoded and executed, see "Requirements"
-   *
-   */
-  function xReceive(
-    bytes32 transferId,
-    uint256 amount,
-    address asset,
-    address originSender,
-    uint32 originDomain,
-    bytes memory callData
-  )
-    external
-    returns (bytes memory)
-  {
-    //TODO check params
-
-    //@dev asset of migration struct is the address on origin chain. We want the asset address on the destination chain
-    Migration memory migration = abi.decode(callData, (Migration));
-    migration.asset = asset;
-
-    //Handle inbound
-    receiveXMigration(callData);
-
-    return "";
-  }
-
-  function beginXMigration(Migration memory migration) public returns (bytes32 transferId) {
+  function beginXMigration(Migration memory migration) external returns (bytes32 transferId) {
     //TODO check parameters
 
     //Identify market
@@ -104,27 +70,10 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, IXReceiv
       revert("Market not supported");
     }
 
-    transferId = connext.xcall(
-      // _destination: Domain ID of the destination chain
-      uint32(migration.toChain),
-      // _to: address of the target contract
-      migration.himalaya,
-      // _asset: address of the token contract
-      migration.asset,
-      // _delegate: address that has rights to update the original slippage tolerance
-      // by calling Connext's forceUpdateSlippage function
-      migration.himalaya, //TODO check this parameter
-      // _amount: amount of tokens to transfer
-      migration.amount,
-      // _slippage: can be anything between 0-10000 because
-      // the maximum amount of slippage the user will accept in BPS, 30 == 0.3%
-      30, //TODO implement this
-      // _callData: empty because we're only sending funds
-      abi.encode(migration)
-    );
+    transferId = himalayaBase.xCall(migration);
   }
 
-  function receiveXMigration(bytes memory data) public returns (bool) {
+  function receiveXMigration(bytes memory data) external returns (bool) {
     Migration memory migration = abi.decode(data, (Migration));
     //TODO check parameters
 
