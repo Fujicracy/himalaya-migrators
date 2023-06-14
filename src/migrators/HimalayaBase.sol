@@ -14,18 +14,28 @@ import {IHimalayaBase} from "../interfaces/IHimalayaBase.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IConnext, IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
-import {EIP712} from "../permits/EIP712.sol";
+import {HimalayaPermits} from "../permits/HimalayaPermits.sol";
 
-contract HimalayaBase is IXReceiver, IHimalayaBase, EIP712 {
+contract HimalayaBase is IXReceiver, IHimalayaBase, HimalayaPermits {
   using SafeERC20 for IERC20;
 
   IConnext public immutable connext;
 
-  //domainId => migrator
-  mapping(uint32 => address) public migrators;
+  //chainId => migrator
+  mapping(uint256 => address) public migrators;
+
+  //chainId => domainIdConnext
+  mapping(uint256 => uint32) public domainIds;
 
   constructor(address _connext) {
     connext = IConnext(_connext);
+
+    //mainnet
+    domainIds[1] = 6648936;
+    //polygon
+    domainIds[137] = 1886350457;
+    //arbitrum
+    domainIds[42161] = 1634886255;
   }
 
   /**
@@ -53,24 +63,36 @@ contract HimalayaBase is IXReceiver, IHimalayaBase, EIP712 {
     //TODO check params
 
     //@dev asset of migration struct is the address on origin chain. We want the asset address on the destination chain
-    Migration memory migration = abi.decode(callData, (Migration));
-    migration.asset = asset;
+    (Migration memory migration, uint8 v, bytes32 r, bytes32 s) =
+      abi.decode(callData, (Migration, uint8, bytes32, bytes32));
+
+    // Check signed Migration permit
+    _checkMigrationPermit(migration, v, r, s);
+
+    //Approve IHimalayaMigrator to pull funds
+    migration.assetDest.safeApprove(migration.himalaya, migration.amount);
 
     //Handle inbound
     IHimalayaMigrator(migration.himalaya).receiveXMigration(callData);
 
-    return "";
+    return abi.encode(transferId);
   }
 
   function xCall(Migration memory migration) external returns (bytes32 transferId) {
+    //Pull funds from IHimalayaMigrator
+    migration.assetOrigin.safeTransferFrom(msg.sender, address(this), migration.amount);
+
+    //Approve connext to pull funds
+    migration.assetOrigin.safeApprove(address(connext), migration.amount);
+
     //TODO
     transferId = connext.xcall(
       // _destination: Domain ID of the destination chain
-      uint32(migration.toChainId),
+      domainIds[migration.toChainId],
       // _to: address of the target contract
       migration.himalaya,
       // _asset: address of the token contract
-      migration.asset,
+      address(migration.assetOrigin),
       // _delegate: address that has rights to update the original slippage tolerance
       // by calling Connext's forceUpdateSlippage function
       migration.himalaya, //TODO check this parameter

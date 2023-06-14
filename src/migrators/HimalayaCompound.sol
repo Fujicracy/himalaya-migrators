@@ -60,15 +60,26 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     //Identify market
     if (isMarketV2[migration.fromMarket]) {
       _handleOutboundFromV2(
-        migration.toChain, migration.owner, migration.fromMarket, migration.asset, migration.amount
+        migration.toChainId,
+        migration.owner,
+        migration.fromMarket,
+        migration.assetOrigin,
+        migration.amount
       );
     } else if (isMarketV3[migration.fromMarket]) {
       _handleOutboundFromV3(
-        migration.toChain, migration.owner, migration.fromMarket, migration.asset, migration.amount
+        migration.toChainId,
+        migration.owner,
+        migration.fromMarket,
+        migration.assetOrigin,
+        migration.amount
       );
     } else {
       revert("Market not supported");
     }
+
+    //Approve himalayaBase to pull funds
+    SafeERC20.safeApprove(migration.assetOrigin, address(himalayaBase), migration.amount);
 
     transferId = himalayaBase.xCall(migration);
   }
@@ -77,13 +88,16 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     Migration memory migration = abi.decode(data, (Migration));
     //TODO check parameters
 
+    //Pull funds from HimalayaBase
+    SafeERC20.safeTransferFrom(migration.assetDest, msg.sender, address(this), migration.amount);
+
     if (isMarketV3[migration.toMarket]) {
       _handleInboundToV3(
         migration.owner,
         migration.toMarket,
-        migration.asset,
+        migration.assetDest,
         migration.amount,
-        migration.debtAsset,
+        migration.debtAssetDest,
         migration.debtAmount
       );
     } else {
@@ -97,7 +111,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     uint128 toChain,
     address owner,
     address fromMarket,
-    address asset,
+    IERC20 asset,
     uint256 amount
   )
     internal
@@ -108,7 +122,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     SafeERC20.safeTransferFrom(IERC20(fromMarket), owner, address(this), cTokenBalance);
 
     //Withdraw funds from V2
-    withdrawV2(amount, asset, fromMarket);
+    withdrawV2(amount, address(asset), fromMarket);
 
     return true;
   }
@@ -117,7 +131,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     uint128 toChain,
     address owner,
     address fromMarket,
-    address asset,
+    IERC20 asset,
     uint256 amount
   )
     internal
@@ -129,18 +143,18 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   function _handleInboundToV3(
     address owner,
     address toMarket,
-    address asset,
+    IERC20 asset,
     uint256 amount,
-    address debtAsset,
+    IERC20 debtAsset,
     uint256 debtAmount
   )
     internal
     returns (bool)
   {
-    IERC20(asset).safeIncreaseAllowance(toMarket, amount);
-    depositV3(owner, amount, asset, toMarket);
+    asset.safeIncreaseAllowance(toMarket, amount);
+    depositV3(owner, amount, address(asset), toMarket);
 
-    borrowV3(owner, debtAmount, debtAsset, toMarket);
+    borrowV3(owner, debtAmount, address(debtAsset), toMarket);
 
     return true;
   }

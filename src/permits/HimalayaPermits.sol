@@ -9,7 +9,7 @@ pragma solidity 0.8.15;
  * @notice
  */
 
-import {HimalayaBase} from "../migrators/HimalayaBase.sol";
+import {MigrationPermitBase, MigrationPermit} from "../libraries/MigrationPermitBase.sol";
 import {Migration} from "../interfaces/IHimalayaMigrator.sol";
 import {EIP712} from "./EIP712.sol";
 import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
@@ -20,27 +20,6 @@ contract HimalayaPermits is EIP712 {
   error HimalayaPermits__invalidSignature();
 
   mapping(address => uint48) private _nonces;
-
-  // solhint-disable-next-line var-name-mixedcase
-  bytes32 internal constant PERMIT_MIGRATION_TYPEHASH = keccak256(
-      abi.encodePacked(
-        "MigrationPermit(",
-        "address owner,",
-        "uint48 fromChainId,",
-        "uint48 toChainId,",
-        "address fromMarket,",
-        "address toMarket,",
-        "IERC20 assetOrigin,",
-        "IERC20 assetDest,",
-        "uint256 amount,",
-        "IERC20 debtAssetOrigin,",
-        "IERC20 debtAssetDest,",
-        "uint256 debtAmount,",
-        "address himalaya,",
-        "uint48 nonce,",
-        "uint48 deadline"
-      )
-  );
 
   /// @dev Reserve a slot as recommended in OZ {draft-ERC20Permit}.
   // solhint-disable-next-line var-name-mixedcase
@@ -60,38 +39,63 @@ contract HimalayaPermits is EIP712 {
   /// @dev TODO docs.
   function _checkMigrationPermit(
     Migration memory migration,
-    uint48 deadline,
     uint8 v,
     bytes32 r,
     bytes32 s
   )
     internal
-    view
   {
-    _checkDeadline(deadline);
-    bytes32 structHash = keccak256(
-      abi.encode(
-          PERMIT_MIGRATION_TYPEHASH,
-          migration.owner,
-          migration.fromChainId,
-          uint48(block.chainid), // should match: migration.toChainId
-          migration.fromMarket,
-          migration.toMarket,
-          migration.assetOrigin,
-          migration.assetDest,
-          migration.amount,
-          migration.debtAssetOrigin,
-          migration.debtAssetDest,
-          migration.debtAmount,
-          migration.himalaya,
-          _useNonce(migration.owner),
-          deadline
-      )
-    );
+    _checkDeadline(migration.deadline);
+
+    MigrationPermit memory permit = _buildMigrationPermit(migration);
+    bytes32 structHash = _getStructHashMigration(permit);
+
     _checkSigner(structHash, migration.owner, v, r, s);
   }
 
   /// Internal Functions
+
+  function _buildMigrationPermit(Migration memory migration)
+    private
+    returns (MigrationPermit memory permit)
+  {
+    permit.owner = migration.owner;
+    permit.fromChainId = migration.fromChainId;
+    permit.toChainId = uint48(block.chainid); // should match: migration.toChainId
+    permit.fromMarket = migration.fromMarket;
+    permit.toMarket = migration.toMarket;
+    permit.assetOrigin = migration.assetOrigin;
+    permit.assetDest = migration.assetDest;
+    permit.amount = migration.amount;
+    permit.debtAssetOrigin = migration.debtAssetOrigin;
+    permit.debtAssetDest = migration.debtAssetDest;
+    permit.debtAmount = migration.debtAmount;
+    permit.himalaya = migration.himalaya;
+    permit.deadline = migration.deadline;
+    permit.nonce = _useNonce(migration.owner);
+  }
+
+  function _getStructHashMigration(MigrationPermit memory permit) private pure returns (bytes32) {
+    return keccak256(
+      abi.encode(
+        MigrationPermitBase.PERMIT_MIGRATION_TYPEHASH,
+        permit.owner,
+        permit.fromChainId,
+        permit.toChainId,
+        permit.fromMarket,
+        permit.toMarket,
+        permit.assetOrigin,
+        permit.assetDest,
+        permit.amount,
+        permit.debtAssetOrigin,
+        permit.debtAssetDest,
+        permit.debtAmount,
+        permit.himalaya,
+        permit.nonce,
+        permit.deadline
+      )
+    );
+  }
 
   /**
    * @dev "Consume a nonce": return the current amount and increment.
@@ -104,7 +108,6 @@ contract HimalayaPermits is EIP712 {
     unchecked {
       _nonces[owner] += 1;
     }
-    
   }
 
   /**
