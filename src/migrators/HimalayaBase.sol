@@ -44,8 +44,6 @@ contract HimalayaBase is IXReceiver, IHimalayaBase, HimalayaPermits {
    * @param transferId the unique identifier of the crosschain transfer
    * @param amount the amount of transferring asset, after slippage, the recipient address receives
    * @param asset the asset being transferred
-   * @param originSender the address of the contract or EOA that called xcall on the origin chain
-   * @param originDomain the origin domain identifier according Connext nomenclature
    * @param callData the calldata that will get decoded and executed, see "Requirements"
    *
    */
@@ -53,26 +51,33 @@ contract HimalayaBase is IXReceiver, IHimalayaBase, HimalayaPermits {
     bytes32 transferId,
     uint256 amount,
     address asset,
-    address originSender,
-    uint32 originDomain,
+    address, /*originSender*/
+    uint32, /*originDomain*/
     bytes memory callData
   )
     external
     returns (bytes memory)
   {
-    //TODO check params
-
     //@dev asset of migration struct is the address on origin chain. We want the asset address on the destination chain
     (Migration memory migration, uint8 v, bytes32 r, bytes32 s) =
       abi.decode(callData, (Migration, uint8, bytes32, bytes32));
 
+    //TODO check params
+    if (asset != address(migration.assetDest)) {
+      //TODO cannot revert, but we need to handle this malicious attempt.
+    }
+
     // Check signed Migration permit
     _checkMigrationPermit(migration, v, r, s);
+
+    ///@dev Since signature has already been check we can replace amount with received amount considering fees and slippage by Connext
+    migration.amount = amount;
 
     //Approve IHimalayaMigrator to pull funds
     migration.assetDest.safeApprove(migration.himalaya, migration.amount);
 
     //Handle inbound
+    //TODO this next call has to be wrapped in a try-catch
     IHimalayaMigrator(migration.himalaya).receiveXMigration(callData);
 
     return abi.encode(transferId);

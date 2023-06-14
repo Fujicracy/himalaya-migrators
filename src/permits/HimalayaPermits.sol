@@ -19,14 +19,14 @@ contract HimalayaPermits is EIP712 {
   error HimalayaPermits__expiredDeadline();
   error HimalayaPermits__invalidSignature();
 
-  mapping(address => uint48) private _nonces;
+  mapping(address => uint256) private _nonces;
 
   /// @dev Reserve a slot as recommended in OZ {draft-ERC20Permit}.
   // solhint-disable-next-line var-name-mixedcase
   bytes32 private _PERMIT_TYPEHASH_DEPRECATED_SLOT;
 
   /// @dev TODO docs
-  function nonces(address owner) public view returns (uint48) {
+  function nonces(address owner) public view returns (uint256) {
     return _nonces[owner];
   }
 
@@ -76,25 +76,7 @@ contract HimalayaPermits is EIP712 {
   }
 
   function _getStructHashMigration(MigrationPermit memory permit) private pure returns (bytes32) {
-    return keccak256(
-      abi.encode(
-        MigrationPermitBase.PERMIT_MIGRATION_TYPEHASH,
-        permit.owner,
-        permit.fromChainId,
-        permit.toChainId,
-        permit.fromMarket,
-        permit.toMarket,
-        permit.assetOrigin,
-        permit.assetDest,
-        permit.amount,
-        permit.debtAssetOrigin,
-        permit.debtAssetDest,
-        permit.debtAmount,
-        permit.himalaya,
-        permit.nonce,
-        permit.deadline
-      )
-    );
+    return keccak256(abi.encode(MigrationPermitBase.PERMIT_MIGRATION_TYPEHASH, permit));
   }
 
   /**
@@ -103,7 +85,7 @@ contract HimalayaPermits is EIP712 {
    *
    * @param owner address who uses a permit
    */
-  function _useNonce(address owner) internal returns (uint48 current) {
+  function _useNonce(address owner) internal returns (uint256 current) {
     current = _nonces[owner];
     unchecked {
       _nonces[owner] += 1;
@@ -115,7 +97,7 @@ contract HimalayaPermits is EIP712 {
    *
    * @param deadline timestamp to check
    */
-  function _checkDeadline(uint48 deadline) private view {
+  function _checkDeadline(uint256 deadline) private view {
     if (block.timestamp > uint256(deadline)) {
       revert HimalayaPermits__expiredDeadline();
     }

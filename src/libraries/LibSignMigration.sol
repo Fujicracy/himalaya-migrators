@@ -45,31 +45,13 @@ library LibSignMigration {
     permit.debtAssetDest = debtAssetDest;
     permit.debtAmount = debtAmount;
     permit.himalaya = himalaya;
-    permit.deadline = uint48(block.timestamp + 0.25 days);
+    permit.deadline = uint256(block.timestamp + 0.25 days);
     permit.nonce = HimalayaBase(himalaya).nonces(owner);
   }
 
   /// @notice Returns the hash of a permit-withdraw.
   function getStructHashMigration(MigrationPermit memory permit) public pure returns (bytes32) {
-    return keccak256(
-      abi.encode(
-        MigrationPermitBase.PERMIT_MIGRATION_TYPEHASH,
-        permit.owner,
-        permit.fromChainId,
-        permit.toChainId,
-        permit.fromMarket,
-        permit.toMarket,
-        permit.assetOrigin,
-        permit.assetDest,
-        permit.amount,
-        permit.debtAssetOrigin,
-        permit.debtAssetDest,
-        permit.debtAmount,
-        permit.himalaya,
-        permit.nonce,
-        permit.deadline
-      )
-    );
+    return keccak256(abi.encode(MigrationPermitBase.PERMIT_MIGRATION_TYPEHASH, permit));
   }
 
   /// @notice Returns the digest.

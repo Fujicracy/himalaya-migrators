@@ -16,8 +16,8 @@ struct MigrationPermit {
   IERC20 debtAssetDest;
   uint256 debtAmount;
   address himalaya;
-  uint48 deadline;
-  uint48 nonce;
+  uint256 deadline;
+  uint256 nonce;
 }
 
 library MigrationPermitBase {
@@ -37,8 +37,8 @@ library MigrationPermitBase {
       "IERC20 debtAssetDest,",
       "uint256 debtAmount,",
       "address himalaya,",
-      "uint48 deadline,",
-      "uint48 nonce"
+      "uint256 deadline,",
+      "uint256 nonce"
     )
   );
 }

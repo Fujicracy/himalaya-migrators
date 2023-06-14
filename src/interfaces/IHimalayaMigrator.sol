@@ -24,7 +24,7 @@ struct Migration {
   IERC20 debtAssetDest;
   uint256 debtAmount;
   address himalaya; //address of himalaya on destination chain
-  uint48 deadline;
+  uint256 deadline;
 }
 
 interface IHimalayaMigrator {
