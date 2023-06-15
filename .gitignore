@@ -24,3 +24,6 @@ abis
 cache_hardhat
 artifacts
 deployments/localhost
+
+#vscode
+.vscode
