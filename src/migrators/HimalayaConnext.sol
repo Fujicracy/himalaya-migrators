@@ -99,7 +99,7 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext {
       // _slippage: can be anything between 0-10000 because
       // the maximum amount of slippage the user will accept in BPS, 30 == 0.3%
       30, //TODO implement this
-      // _callData: data to be decoded and executed on the destination chain 
+      // _callData: data to be decoded and executed on the destination chain
       abi.encode(migration)
     );
   }
