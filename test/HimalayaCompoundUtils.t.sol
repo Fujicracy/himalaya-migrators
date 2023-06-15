@@ -16,15 +16,6 @@ import {HimalayaCompound} from "../src/migrators/HimalayaCompound.sol";
 import {ICompoundV3} from "@fuji-v2/src/interfaces/compoundV3/ICompoundV3.sol";
 
 contract HimalayaCompoundUtils is Test {
-  uint256 public constant ALICE_PK = 0xA;
-  address public ALICE = vm.addr(ALICE_PK);
-
-  //Mainnet ERC20
-  address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-  address public constant WSTETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
-  address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-  address public constant WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
-
   //Compound Integrations
   CompoundV2 public compoundV2; //only on mainnet
   CompoundV3 public compoundV3;
@@ -39,20 +30,8 @@ contract HimalayaCompoundUtils is Test {
   //Polygon Compound Markets
   address public cUSDCV3_Polygon = 0xF25212E676D1F7F89Cd72fFEe66158f541246445;
 
-  //Mainnet Connext
-  address public constant CONNEXT_MAINNET = 0x8898B472C54c31894e3B9bb83cEA802a5d0e63C6;
-
-  uint256 AMOUNT_SUPPLY_WBTC = 1e8;
-  uint256 AMOUNT_BORROW_USDC = 10e8;
-
-  function setLabels() internal {
-    //TODO rename this function and set this labels dynamically
-    vm.label(ALICE, "ALICE");
-    vm.label(WETH, "WETH");
-    vm.label(WSTETH, "WSTETH");
-    vm.label(USDC, "USDC");
-    vm.label(WBTC, "WBTC");
-
+  function setLabelsCompound() internal {
+    //TODO rename this function and set this labels dynamically according to the chain
     vm.label(address(compoundV2), "compoundV2");
     vm.label(address(compoundV3), "compoundV3");
     vm.label(address(himalayaCompound), "himalayaCompound");

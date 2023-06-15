@@ -14,24 +14,15 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IHimalayaMigrator} from "../../src/interfaces/IHimalayaMigrator.sol";
 import {HimalayaCompound} from "../../src/migrators/HimalayaCompound.sol";
 import {ICompoundV3} from "@fuji-v2/src/interfaces/compoundV3/ICompoundV3.sol";
-import {HimalayaCompoundUtils} from "../HimalayaCompoundUtils.t.sol";
 import {IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
+import {HimalayaCompoundUtils} from "../HimalayaCompoundUtils.t.sol";
+import {ConnextUtils} from "../ConnextUtils.t.sol";
+import {Utils} from "../Utils.t.sol";
 
 /**
- * @dev This contract tests the integration of CompoundV2 and CompoundV3.
+ * @dev This contract tests the cross chain migration using the HimalayaCompound contract.
  */
-contract HimalayaCompoundUnitTests is HimalayaCompoundUtils {
-
-  uint32 public constant MAINNET_DOMAIN = 6648936;
-  uint32 public constant OPTIMISM_DOMAIN = 1869640809;
-  uint32 public constant ARBITRUM_DOMAIN = 1634886255;
-  uint32 public constant POLYGON_DOMAIN = 1886350457;
-  uint32 public constant GNOSIS_DOMAIN = 6778479;
-  uint32 public constant GOERLI_DOMAIN = 1735353714;
-  uint32 public constant OPTIMISM_GOERLI_DOMAIN = 1735356532;
-  uint32 public constant MUMBAI_DOMAIN = 9991;
-  //https://github.com/connext/chaindata/blob/main/crossChain.json
-
+contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils {
   function setUp() public {
     vm.createSelectFork("mainnet");
     compoundV2 = new CompoundV2();
@@ -40,6 +31,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils {
     himalayaCompound = new HimalayaCompound(CONNEXT_MAINNET);
 
     setLabels();
+    setLabelsCompound();
   }
 
   function test_handleOutboundFromV2ToV3() public {
@@ -60,10 +52,10 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils {
     migration.fromMarket = address(cETHV2);
     migration.toMarket = cWETHV3;
     migration.assetOrigin = IERC20(WETH);
-    migration.assetDest = IERC20(WETH);//TODO
+    migration.assetDest = IERC20(WETH_Polygon);
     migration.amount = 100e18;
-    migration.debtAssetOrigin = IERC20(address(0));//TODO
-    migration.debtAssetDest = IERC20(address(0));//TODO
+    migration.debtAssetOrigin = IERC20(address(0)); //TODO
+    migration.debtAssetDest = IERC20(address(0)); //TODO
     migration.debtAmount = 0;
     migration.fromChain = 1;
     migration.toChain = 137; //Polygon
@@ -92,10 +84,10 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils {
     migration.fromMarket = cUSDCV3;
     migration.toMarket = cUSDCV3_Polygon;
     migration.assetOrigin = IERC20(WBTC);
-    migration.assetDest = IERC20(WBTC);//TODO
+    migration.assetDest = IERC20(WBTC_Polygon);
     migration.amount = 100e18;
     migration.debtAssetOrigin = IERC20(USDC);
-    migration.debtAssetDest = IERC20(USDC);//TODO
+    migration.debtAssetDest = IERC20(USDC_Polygon);
     migration.debtAmount = 100e6;
     migration.fromChain = 1;
     migration.toChain = 137; //Polygon
@@ -115,14 +107,14 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils {
     migration.owner = ALICE;
     migration.fromMarket = cUSDCV3_Polygon;
     migration.toMarket = cUSDCV3;
-    migration.assetOrigin = IERC20(WBTC);//TODO
+    migration.assetOrigin = IERC20(WBTC_Polygon);
     migration.assetDest = IERC20(WBTC);
     migration.amount = AMOUNT_SUPPLY_WBTC;
-    migration.debtAssetOrigin = IERC20(USDC);//TODO
+    migration.debtAssetOrigin = IERC20(USDC_Polygon);
     migration.debtAssetDest = IERC20(USDC);
     migration.debtAmount = AMOUNT_BORROW_USDC;
-    migration.fromChain = 127;
-    migration.toChain = 1; //Polygon
+    migration.fromChain = 127; //Polygon
+    migration.toChain = 1; //Mainnet
     migration.himalaya = address(himalayaCompound);
 
     //approve himalayaCompound as operator on V3
@@ -130,13 +122,13 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils {
     ICompoundV3(migration.toMarket).allow(address(himalayaCompound), true);
     vm.stopPrank();
 
-    //mock connext behaviour by sending funds directly to himalayaCompound
-    deal(WBTC, address(himalayaCompound), AMOUNT_SUPPLY_WBTC);
+    //mock connext and himalayaConnext behaviour by dealing and approving
+    deal(WBTC, address(this), AMOUNT_SUPPLY_WBTC);
+    //approve
+    IERC20(WBTC).approve(address(himalayaCompound), AMOUNT_SUPPLY_WBTC);
 
     bytes memory data = abi.encode(migration);
-    IXReceiver(address(himalayaCompound)).xReceive(
-      "", migration.amount, address(migration.assetDest), ALICE, POLYGON_DOMAIN, data
-    );//TODO correct parameters
+    himalayaCompound.receiveXMigration(data);
 
     assertEq(IERC20(USDC).balanceOf(ALICE), AMOUNT_BORROW_USDC);
     assertEq(compoundV3.getDepositBalanceV3(ALICE, WBTC, cUSDCV3), AMOUNT_SUPPLY_WBTC);
