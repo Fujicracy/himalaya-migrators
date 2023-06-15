@@ -2,17 +2,17 @@
 pragma solidity 0.8.15;
 
 /**
- * @title IHimalayaBase
+ * @title IHimalayaConnext
  *
  * @author Fujidao Labs
  *
- * @notice Defines interface for {HimalayaBase} migration operations.
+ * @notice Defines interface for {HimalayaConnext} migration operations.
  */
 
 import {IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
 import {IHimalayaMigrator} from "./IHimalayaMigrator.sol";
 
-interface IHimalayaBase is IXReceiver {
+interface IHimalayaConnext is IXReceiver {
   function xCall(IHimalayaMigrator.Migration memory migration)
     external
     returns (bytes32 transferId);
