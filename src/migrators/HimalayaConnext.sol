@@ -83,7 +83,7 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext {
     //Approve connext to pull funds
     migration.assetOrigin.safeApprove(address(connext), migration.amount);
 
-    //TODO
+    //TODO check migration struct parameters are secure and correct
     transferId = connext.xcall(
       // _destination: Domain ID of the destination chain
       domainIds[migration.toChain],
@@ -93,13 +93,13 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext {
       address(migration.assetOrigin),
       // _delegate: address that has rights to update the original slippage tolerance
       // by calling Connext's forceUpdateSlippage function
-      migration.himalaya, //TODO check this parameter
+      migration.himalaya,
       // _amount: amount of tokens to transfer
       migration.amount,
       // _slippage: can be anything between 0-10000 because
       // the maximum amount of slippage the user will accept in BPS, 30 == 0.3%
       30, //TODO implement this
-      // _callData: empty because we're only sending funds
+      // _callData: data to be decoded and executed on the destination chain 
       abi.encode(migration)
     );
   }
