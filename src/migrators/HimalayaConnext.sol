@@ -9,19 +9,20 @@ pragma solidity 0.8.15;
  * @notice This contract allows Fuji Himalaya to receive calls from connext and handle migrations.
  */
 
+import "forge-std/console.sol";
 import {IHimalayaMigrator} from "../interfaces/IHimalayaMigrator.sol";
-import {IHimalayaBase} from "../interfaces/IHimalayaBase.sol";
+import {IHimalayaConnext} from "../interfaces/IHimalayaConnext.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IConnext, IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
 
-contract HimalayaBase is IXReceiver, IHimalayaBase {
+contract HimalayaConnext is IXReceiver, IHimalayaConnext {
   using SafeERC20 for IERC20;
 
   IConnext public immutable connext;
 
-  //chainId => migrator
-  mapping(uint256 => address) public migrators;
+  //chainId => himalayaConnexts
+  mapping(uint256 => address) public himalayaConnexts;
 
   //chainId => domainIdConnext
   mapping(uint256 => uint32) public domainIds;
@@ -61,13 +62,18 @@ contract HimalayaBase is IXReceiver, IHimalayaBase {
   {
     //TODO check params
 
-    IHimalayaMigrator.Migration memory migration = abi.decode(callData, (IHimalayaMigrator.Migration));
+    console.log("xReceive called");
+    IHimalayaMigrator.Migration memory migration =
+      abi.decode(callData, (IHimalayaMigrator.Migration));
 
+    console.log("here");
     //Approve IHimalayaMigrator to pull funds
     migration.assetDest.safeApprove(migration.himalaya, migration.amount);
+    console.log("here");
 
     //Handle inbound
     IHimalayaMigrator(migration.himalaya).receiveXMigration(callData);
+    console.log("here");
 
     return "";
   }
@@ -103,9 +109,11 @@ contract HimalayaBase is IXReceiver, IHimalayaBase {
     );
   }
 
-  function addMigrator(uint32 domainId, address migrator) external {
+  function addHimalayaConnext(uint32 domainId, address himalayaConnext) external {
     //TODO define modifier
-    require(migrators[domainId] == address(0), "HimalayaMigrator: migrator already exists");
-    migrators[domainId] = migrator;
+    require(
+      himalayaConnexts[domainId] == address(0), "HimalayaConnext: himalayaConnext already exists"
+    );
+    himalayaConnexts[domainId] = himalayaConnext;
   }
 }
