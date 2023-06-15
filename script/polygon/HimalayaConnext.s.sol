@@ -9,13 +9,13 @@ contract DeployHimalayaConnext is Script {
   //Polygon Connext
   address public constant CONNEXT_POLYGON = 0x11984dc4465481512eb5b777E44061C158CF2259;
 
-    function setUp() public {}
+  function setUp() public {}
 
-    function run() public {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
-        IHimalayaConnext himalayaConnext = new HimalayaConnext(CONNEXT_POLYGON);
+  function run() public {
+    uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+    vm.startBroadcast(deployerPrivateKey);
+    IHimalayaConnext himalayaConnext = new HimalayaConnext(CONNEXT_POLYGON);
 
-        vm.stopBroadcast();
-    }
+    vm.stopBroadcast();
+  }
 }

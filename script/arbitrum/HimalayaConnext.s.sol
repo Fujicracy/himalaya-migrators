@@ -8,13 +8,13 @@ import "../../src/interfaces/IHimalayaConnext.sol";
 contract DeployHimalayaConnext is Script {
   address public constant CONNEXT_ARBITRUM = 0xEE9deC2712cCE65174B561151701Bf54b99C24C8;
 
-    function setUp() public {}
+  function setUp() public {}
 
-    function run() public {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
-        IHimalayaConnext himalayaConnext = new HimalayaConnext(CONNEXT_ARBITRUM);
+  function run() public {
+    uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+    vm.startBroadcast(deployerPrivateKey);
+    IHimalayaConnext himalayaConnext = new HimalayaConnext(CONNEXT_ARBITRUM);
 
-        vm.stopBroadcast();
-    }
+    vm.stopBroadcast();
+  }
 }
