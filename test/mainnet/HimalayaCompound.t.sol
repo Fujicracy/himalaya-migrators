@@ -18,6 +18,7 @@ import {IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
 import {HimalayaCompoundUtils} from "../HimalayaCompoundUtils.t.sol";
 import {ConnextUtils} from "../ConnextUtils.t.sol";
 import {Utils} from "../Utils.t.sol";
+import {HimalayaConnext} from "../../src/migrators/HimalayaConnext.sol";
 
 /**
  * @dev This contract tests the cross chain migration using the HimalayaCompound contract.
@@ -28,7 +29,8 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     compoundV2 = new CompoundV2();
     compoundV3 = new CompoundV3();
 
-    himalayaCompound = new HimalayaCompound(CONNEXT_MAINNET);
+    himalayaConnext = new HimalayaConnext(CONNEXT_MAINNET);
+    himalayaCompound = new HimalayaCompound(address(himalayaConnext));
 
     setLabels();
     setLabelsCompound();
@@ -129,6 +131,39 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
 
     bytes memory data = abi.encode(migration);
     himalayaCompound.receiveXMigration(data);
+
+    assertEq(IERC20(USDC).balanceOf(ALICE), AMOUNT_BORROW_USDC);
+    assertEq(compoundV3.getDepositBalanceV3(ALICE, WBTC, cUSDCV3), AMOUNT_SUPPLY_WBTC);
+  }
+
+  function test_handleInboundToV3WithHimalayaConnext() public {
+    //Migration from 100 WETH deposit position from CompoundV2 on other chain to CompoundV3 on mainnet
+    IHimalayaMigrator.Migration memory migration;
+    migration.owner = ALICE;
+    migration.fromMarket = cUSDCV3_Polygon;
+    migration.toMarket = cUSDCV3;
+    migration.assetOrigin = IERC20(WBTC_Polygon);
+    migration.assetDest = IERC20(WBTC);
+    migration.amount = AMOUNT_SUPPLY_WBTC;
+    migration.debtAssetOrigin = IERC20(USDC_Polygon);
+    migration.debtAssetDest = IERC20(USDC);
+    migration.debtAmount = AMOUNT_BORROW_USDC;
+    migration.fromChain = 127; //Polygon
+    migration.toChain = 1; //Mainnet
+    migration.himalaya = address(himalayaCompound);
+
+    //approve himalayaCompound as operator on V3
+    vm.startPrank(ALICE);
+    ICompoundV3(migration.toMarket).allow(address(himalayaCompound), true);
+    vm.stopPrank();
+
+    //mock connext behaviour by dealing and approving
+    deal(WBTC, address(himalayaConnext), AMOUNT_SUPPLY_WBTC);
+
+    bytes memory data = abi.encode(migration);
+    himalayaConnext.xReceive(
+      0, migration.amount, address(migration.assetDest), migration.owner, POLYGON_DOMAIN, data
+    );
 
     assertEq(IERC20(USDC).balanceOf(ALICE), AMOUNT_BORROW_USDC);
     assertEq(compoundV3.getDepositBalanceV3(ALICE, WBTC, cUSDCV3), AMOUNT_SUPPLY_WBTC);

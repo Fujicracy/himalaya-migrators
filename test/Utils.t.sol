@@ -3,10 +3,13 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import {IWETH9} from "@fuji-v2/src/abstracts/WETH9.sol";
+import {IHimalayaConnext} from "../src/interfaces/IHimalayaConnext.sol";
 
 contract Utils is Test {
   uint256 public constant ALICE_PK = 0xA;
   address public ALICE = vm.addr(ALICE_PK);
+
+  IHimalayaConnext public himalayaConnext;
 
   //Mainnet ERC20
   address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -23,7 +26,6 @@ contract Utils is Test {
   address public constant WETH_Arbitrum = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
   address public constant USDC_Arbitrum = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
   address public constant WBTC_Arbitrum = 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f;
-
 
   uint256 AMOUNT_SUPPLY_WBTC = 1e8;
   uint256 AMOUNT_BORROW_USDC = 10e8;
