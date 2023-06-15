@@ -14,7 +14,7 @@ import {CompoundV2} from "../integrations/CompoundV2.sol";
 import {CompoundV3} from "../integrations/CompoundV3.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {IHimalayaBase} from "../interfaces/IHimalayaBase.sol";
+import {IHimalayaConnext} from "../interfaces/IHimalayaConnext.sol";
 
 contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   using SafeERC20 for IERC20;
@@ -22,10 +22,10 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   mapping(address => bool) public isMarketV2;
   mapping(address => bool) public isMarketV3;
 
-  IHimalayaBase public immutable himalayaBase;
+  IHimalayaConnext public immutable himalayaConnext;
 
-  constructor(address _himalayaBase) {
-    himalayaBase = IHimalayaBase(_himalayaBase);
+  constructor(address _himalayaConnext) {
+    himalayaConnext = IHimalayaConnext(_himalayaConnext);
 
     isMarketV2[0xe65cdB6479BaC1e22340E4E755fAE7E509EcD06c] = true; //cAAVE
     isMarketV2[0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E] = true; //cBAT
@@ -60,27 +60,35 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     //Identify market
     if (isMarketV2[migration.fromMarket]) {
       _handleOutboundFromV2(
-        migration.toChain, migration.owner, migration.fromMarket, migration.assetOrigin, migration.amount
+        migration.toChain,
+        migration.owner,
+        migration.fromMarket,
+        migration.assetOrigin,
+        migration.amount
       );
     } else if (isMarketV3[migration.fromMarket]) {
       _handleOutboundFromV3(
-        migration.toChain, migration.owner, migration.fromMarket, migration.assetOrigin, migration.amount
+        migration.toChain,
+        migration.owner,
+        migration.fromMarket,
+        migration.assetOrigin,
+        migration.amount
       );
     } else {
       revert("Market not supported");
     }
 
-    //Approve himalayaBase to pull funds
-    SafeERC20.safeApprove(migration.assetOrigin, address(himalayaBase), migration.amount);
+    //Approve himalayaConnext to pull funds
+    SafeERC20.safeApprove(migration.assetOrigin, address(himalayaConnext), migration.amount);
 
-    transferId = himalayaBase.xCall(migration);
+    transferId = himalayaConnext.xCall(migration);
   }
 
   function receiveXMigration(bytes memory data) external returns (bool) {
     Migration memory migration = abi.decode(data, (Migration));
     //TODO check parameters
 
-    //Pull funds from HimalayaBase
+    //Pull funds from HimalayaConnext
     SafeERC20.safeTransferFrom(migration.assetDest, msg.sender, address(this), migration.amount);
 
     if (isMarketV3[migration.toMarket]) {
