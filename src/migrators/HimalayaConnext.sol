@@ -9,7 +9,6 @@ pragma solidity 0.8.15;
  * @notice This contract allows Fuji Himalaya to receive calls from connext and handle migrations.
  */
 
-import "forge-std/console.sol";
 import {IHimalayaMigrator} from "../interfaces/IHimalayaMigrator.sol";
 import {IHimalayaConnext} from "../interfaces/IHimalayaConnext.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -62,18 +61,14 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext {
   {
     //TODO check params
 
-    console.log("xReceive called");
     IHimalayaMigrator.Migration memory migration =
       abi.decode(callData, (IHimalayaMigrator.Migration));
 
-    console.log("here");
     //Approve IHimalayaMigrator to pull funds
     migration.assetDest.safeApprove(migration.himalaya, migration.amount);
-    console.log("here");
 
     //Handle inbound
     IHimalayaMigrator(migration.himalaya).receiveXMigration(callData);
-    console.log("here");
 
     return "";
   }
