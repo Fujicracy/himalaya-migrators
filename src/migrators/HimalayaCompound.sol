@@ -137,6 +137,11 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     internal
     returns (bool)
   {
+    //TODO payback?
+
+    //Withdraw funds from V3
+    withdrawV3(owner, address(this), amount, address(asset), fromMarket);
+
     return true;
   }
 
