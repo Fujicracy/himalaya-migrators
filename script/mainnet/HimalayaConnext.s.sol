@@ -6,6 +6,7 @@ import "../../src/migrators/HimalayaConnext.sol";
 import "../../src/interfaces/IHimalayaConnext.sol";
 
 contract DeployHimalayaConnext is Script {
+  //Mainnet Connext
   address public constant CONNEXT_MAINNET = 0x8898B472C54c31894e3B9bb83cEA802a5d0e63C6;
 
   function setUp() public {}
