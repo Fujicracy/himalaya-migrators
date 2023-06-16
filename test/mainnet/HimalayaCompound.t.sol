@@ -61,7 +61,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     migration.debtAmount = 0;
     migration.fromChain = 1;
     migration.toChain = 137; //Polygon
-    migration.himalaya = address(0); //TODO
+    migration.himalaya = address(himalayaConnext_Polygon);
 
     //approve himalayaCompound to pull cTokens
     cETHV2.approve(address(himalayaCompound), balanceCTokenV2);
@@ -72,13 +72,13 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
   }
 
   function test_handleOutboundFromV3ToV3() public {
-    deal(WBTC, ALICE, 100e18);
-    assertEq(IERC20(WBTC).balanceOf(ALICE), 100e18);
+    deal(WBTC, ALICE, AMOUNT_SUPPLY_WBTC);
+    assertEq(IERC20(WBTC).balanceOf(ALICE), AMOUNT_SUPPLY_WBTC);
 
     //Deposit 100 WETH into CompoundV3 on mainnet
     vm.startPrank(ALICE);
-    _utils_depositV3(100e18, WBTC, cUSDCV3);
-    assertApproxEqAbs(compoundV3.getDepositBalanceV3(ALICE, WBTC, cUSDCV3), 100e18, 100e18 / 10);
+    _utils_depositV3(AMOUNT_SUPPLY_WBTC, WBTC, cUSDCV3);
+    assertApproxEqAbs(compoundV3.getDepositBalanceV3(ALICE, WBTC, cUSDCV3), AMOUNT_SUPPLY_WBTC, AMOUNT_SUPPLY_WBTC / 10);
 
     //Migrate 100 WETH deposit position from CompoundV3 on mainnet to CompoundV3 on other chain
     IHimalayaMigrator.Migration memory migration;
@@ -87,20 +87,20 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     migration.toMarket = cUSDCV3_Polygon;
     migration.assetOrigin = IERC20(WBTC);
     migration.assetDest = IERC20(WBTC_Polygon);
-    migration.amount = 100e18;
+    migration.amount = AMOUNT_SUPPLY_WBTC;
     migration.debtAssetOrigin = IERC20(USDC);
     migration.debtAssetDest = IERC20(USDC_Polygon);
-    migration.debtAmount = 100e6;
+    migration.debtAmount = AMOUNT_BORROW_USDC;
     migration.fromChain = 1;
     migration.toChain = 137; //Polygon
-    migration.himalaya = address(0); //TODO
+    migration.himalaya = address(himalayaConnext_Polygon); 
 
     //approve himalayaCompound as operator on V3
     ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);
 
     himalayaCompound.beginXMigration(migration);
-    assertEq(IERC20(WETH).balanceOf(address(himalayaCompound)), 0);
-    assertEq(compoundV3.getDepositBalanceV3(ALICE, WETH, cWETHV3), 0);
+    assertEq(IERC20(WBTC).balanceOf(address(himalayaCompound)), 0);
+    assertEq(compoundV3.getDepositBalanceV3(ALICE, WBTC, cUSDCV3), 0);
   }
 
   function test_handleInboundToV3() public {
