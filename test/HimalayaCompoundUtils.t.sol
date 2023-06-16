@@ -29,6 +29,8 @@ contract HimalayaCompoundUtils is Test {
   address public cUSDCV3 = 0xc3d688B66703497DAA19211EEdff47f25384cdc3;
   //Polygon Compound Markets
   address public cUSDCV3_Polygon = 0xF25212E676D1F7F89Cd72fFEe66158f541246445;
+  //Arbitrum Compound Markets
+  address public cUSDCV3_Arbitrum = 0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA;
 
   function setLabelsCompound() internal {
     //TODO rename this function and set this labels dynamically according to the chain
