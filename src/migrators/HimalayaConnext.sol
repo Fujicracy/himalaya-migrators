@@ -77,6 +77,8 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext {
     external
     returns (bytes32 transferId)
   {
+    //TODO if token is not "bridgeable" by connext then swap and bridge instead of just bridge
+
     //Pull funds from IHimalayaMigrator
     migration.assetOrigin.safeTransferFrom(msg.sender, address(this), migration.amount);
 
