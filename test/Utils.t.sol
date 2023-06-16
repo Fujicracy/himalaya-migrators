@@ -9,8 +9,9 @@ contract Utils is Test {
   uint256 public constant ALICE_PK = 0xA;
   address public ALICE = vm.addr(ALICE_PK);
 
-  IHimalayaConnext public himalayaConnext_Polygon = IHimalayaConnext(0x65af59cF04176638836E500EA9bD681795c91ae9);
-  IHimalayaConnext public himalayaConnext= IHimalayaConnext(address(0));
+  IHimalayaConnext public himalayaConnext_Polygon =
+    IHimalayaConnext(0x65af59cF04176638836E500EA9bD681795c91ae9);
+  IHimalayaConnext public himalayaConnext = IHimalayaConnext(address(0));
 
   //Mainnet ERC20
   address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
