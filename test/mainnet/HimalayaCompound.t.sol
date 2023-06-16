@@ -77,8 +77,13 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
 
     //Deposit 100 WETH into CompoundV3 on mainnet
     vm.startPrank(ALICE);
+    IERC20(WBTC).approve(address(cUSDCV3), AMOUNT_SUPPLY_WBTC);
     _utils_depositV3(AMOUNT_SUPPLY_WBTC, WBTC, cUSDCV3);
-    assertApproxEqAbs(compoundV3.getDepositBalanceV3(ALICE, WBTC, cUSDCV3), AMOUNT_SUPPLY_WBTC, AMOUNT_SUPPLY_WBTC / 10);
+    assertApproxEqAbs(
+      compoundV3.getDepositBalanceV3(ALICE, WBTC, cUSDCV3),
+      AMOUNT_SUPPLY_WBTC,
+      AMOUNT_SUPPLY_WBTC / 10
+    );
 
     //Migrate 100 WETH deposit position from CompoundV3 on mainnet to CompoundV3 on other chain
     IHimalayaMigrator.Migration memory migration;
@@ -90,12 +95,13 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     migration.amount = AMOUNT_SUPPLY_WBTC;
     migration.debtAssetOrigin = IERC20(USDC);
     migration.debtAssetDest = IERC20(USDC_Polygon);
-    migration.debtAmount = AMOUNT_BORROW_USDC;
+    // migration.debtAmount = AMOUNT_BORROW_USDC;//TODO add borrow before migration
+    migration.debtAmount = 0;
     migration.fromChain = 1;
     migration.toChain = 137; //Polygon
-    migration.himalaya = address(himalayaConnext_Polygon); 
+    migration.himalaya = address(himalayaConnext_Polygon);
 
-    //approve himalayaCompound as operator on V3
+    //approve himalayaCompound as operator on V3 originChain
     ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);
 
     himalayaCompound.beginXMigration(migration);
