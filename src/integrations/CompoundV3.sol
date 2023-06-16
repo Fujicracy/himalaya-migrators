@@ -47,6 +47,7 @@ contract CompoundV3 {
 
   function withdrawV3(
     address user,
+    address receiver,
     uint256 amount,
     address asset,
     address cMarketV3
@@ -54,7 +55,7 @@ contract CompoundV3 {
     internal
     returns (bool success)
   {
-    ICompoundV3(cMarketV3).withdrawFrom(user, user, asset, amount);
+    ICompoundV3(cMarketV3).withdrawFrom(user, receiver, asset, amount);
     success = true;
   }
 
