@@ -56,6 +56,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
 
   function beginXMigration(Migration memory migration) external returns (bytes32 transferId) {
     //TODO check parameters
+    //TODO include v, r, s
 
     //Identify market
     if (isMarketV2[migration.fromMarket]) {
