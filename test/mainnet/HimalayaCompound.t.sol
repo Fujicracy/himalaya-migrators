@@ -121,7 +121,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     migration.debtAssetOrigin = IERC20(USDC_Polygon);
     migration.debtAssetDest = IERC20(USDC);
     migration.debtAmount = AMOUNT_BORROW_USDC;
-    migration.fromChain = 127; //Polygon
+    migration.fromChain = 137; //Polygon
     migration.toChain = 1; //Mainnet
     migration.himalaya = address(himalayaCompound);
 
@@ -154,7 +154,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     migration.debtAssetOrigin = IERC20(USDC_Polygon);
     migration.debtAssetDest = IERC20(USDC);
     migration.debtAmount = AMOUNT_BORROW_USDC;
-    migration.fromChain = 127; //Polygon
+    migration.fromChain = 137; //Polygon
     migration.toChain = 1; //Mainnet
     migration.himalaya = address(himalayaCompound);
 
