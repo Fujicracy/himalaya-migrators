@@ -41,6 +41,9 @@ contract HimalayaCompoundUtils is Test {
     vm.label(address(cETHV2), "cETHV2");
     vm.label(cWETHV3, "cWETHV3");
     vm.label(cUSDCV3, "cUSDCV3");
+
+    vm.label(cUSDCV3_Polygon, "cUSDCV3_Polygon");
+    vm.label(cUSDCV3_Arbitrum, "cUSDCV3_Arbitrum");
   }
 
   function _utils_depositV2_mainnet(uint256 amount, address asset) internal {

@@ -34,11 +34,16 @@ contract Utils is Test {
   uint256 AMOUNT_BORROW_USDC = 10e8;
 
   function setLabels() internal {
-    //TODO rename this function and set this labels dynamically according to the chain
     vm.label(ALICE, "ALICE");
     vm.label(WETH, "WETH");
     vm.label(WSTETH, "WSTETH");
     vm.label(USDC, "USDC");
     vm.label(WBTC, "WBTC");
+    vm.label(WETH_Arbitrum, "WETH_Arbitrum");
+    vm.label(USDC_Arbitrum, "USDC_Arbitrum");
+    vm.label(WBTC_Arbitrum, "WBTC_Arbitrum"");
+    vm.label(WETH_Polygon, "WETH_Polygon");
+    vm.label(USDC_Polygon, "USDC_Polygon");
+    vm.label(WBTC_Polygon, "WBTC_Polygon");
   }
 }
