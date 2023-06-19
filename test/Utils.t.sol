@@ -30,6 +30,7 @@ contract Utils is Test {
   address public constant WBTC_Arbitrum = 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f;
 
   uint256 AMOUNT_SUPPLY_WBTC = 1e8;
+  uint256 AMOUNT_SUPPLY_WETH = 1e18;
   uint256 AMOUNT_BORROW_USDC = 10e8;
 
   function setLabels() internal {
