@@ -41,7 +41,7 @@ contract Utils is Test {
     vm.label(WBTC, "WBTC");
     vm.label(WETH_Arbitrum, "WETH_Arbitrum");
     vm.label(USDC_Arbitrum, "USDC_Arbitrum");
-    vm.label(WBTC_Arbitrum, "WBTC_Arbitrum"");
+    vm.label(WBTC_Arbitrum, "WBTC_Arbitrum");
     vm.label(WETH_Polygon, "WETH_Polygon");
     vm.label(USDC_Polygon, "USDC_Polygon");
     vm.label(WBTC_Polygon, "WBTC_Polygon");
