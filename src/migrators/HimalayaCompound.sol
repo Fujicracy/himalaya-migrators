@@ -108,7 +108,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   }
 
   function _handleOutboundFromV2(
-    uint128 /* toChain */,
+    uint128, /* toChain */
     address owner,
     address fromMarket,
     IERC20 asset,
@@ -128,7 +128,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   }
 
   function _handleOutboundFromV3(
-    uint128 /* toChain */,
+    uint128, /* toChain */
     address owner,
     address fromMarket,
     IERC20 asset,

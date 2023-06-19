@@ -49,11 +49,11 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext {
    *
    */
   function xReceive(
-    bytes32 /* transferId */,
-    uint256 /* amount */,
-    address /* asset */,
-    address /* originSender */,
-    uint32 /* originDomain */,
+    bytes32, /* transferId */
+    uint256, /* amount */
+    address, /* asset */
+    address, /* originSender */
+    uint32, /* originDomain */
     bytes memory callData
   )
     external
