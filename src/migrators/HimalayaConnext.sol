@@ -37,23 +37,23 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext {
     domainIds[42161] = 1634886255;
   }
 
+  // * @param transferId the unique identifier of the crosschain transfer
+  // * @param amount the amount of transferring asset, after slippage, the recipient address receives
+  // * @param asset the asset being transferred
+  // * @param originSender the address of the contract or EOA that called xcall on the origin chain
+  // * @param originDomain the origin domain identifier according Connext nomenclature
   /**
    * @notice Called by Connext on the destination chain.
    *
-   * @param transferId the unique identifier of the crosschain transfer
-   * @param amount the amount of transferring asset, after slippage, the recipient address receives
-   * @param asset the asset being transferred
-   * @param originSender the address of the contract or EOA that called xcall on the origin chain
-   * @param originDomain the origin domain identifier according Connext nomenclature
    * @param callData the calldata that will get decoded and executed, see "Requirements"
    *
    */
   function xReceive(
-    bytes32 transferId,
-    uint256 amount,
-    address asset,
-    address originSender,
-    uint32 originDomain,
+    bytes32 /* transferId */,
+    uint256 /* amount */,
+    address /* asset */,
+    address /* originSender */,
+    uint32 /* originDomain */,
     bytes memory callData
   )
     external
