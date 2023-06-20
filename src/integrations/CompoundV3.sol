@@ -8,8 +8,6 @@ pragma solidity 0.8.15;
  *
  * @notice This contract allows interaction with CompoundV3.
  *
- * @dev The IAddrMapper needs to be properly configured for CompoundV3.
- * See `_getMarketAndAssets`.
  */
 
 import {ICompoundV3} from "@fuji-v2/src/interfaces/compoundV3/ICompoundV3.sol";
