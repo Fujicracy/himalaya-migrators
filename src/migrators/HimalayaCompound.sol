@@ -87,18 +87,17 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     //Pull funds from HimalayaConnext
     SafeERC20.safeTransferFrom(migration.assetDest, msg.sender, address(this), migration.amount);
 
-    if (isMarketV3[migration.toMarket]) {
-      _handleInboundToV3(
-        migration.owner,
-        migration.toMarket,
-        migration.assetDest,
-        migration.amount,
-        migration.debtAssetDest,
-        migration.debtAmount
-      );
-    } else {
+    if (!isMarketV3[migration.toMarket]) {
       revert HimalayaCompound__receiveXMigration_marketNotSupported();
-    }
+
+    _handleInboundToV3(
+      migration.owner,
+      migration.toMarket,
+      migration.assetDest,
+      migration.amount,
+      migration.debtAssetDest,
+      migration.debtAmount
+    );
 
     return true;
   }
