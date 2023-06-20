@@ -19,6 +19,10 @@ import {IHimalayaConnext} from "../interfaces/IHimalayaConnext.sol";
 contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   using SafeERC20 for IERC20;
 
+  //@dev custom error
+  error HimalayaCompound__beginXMigration_marketNotSupported();
+  error HimalayaCompound__receiveXMigration_marketNotSupported(); 
+
   mapping(address => bool) public isMarketV2;
   mapping(address => bool) public isMarketV3;
 
@@ -75,7 +79,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
         migration.amount
       );
     } else {
-      revert("Market not supported");
+      revert HimalayaCompound__beginXMigration_marketNotSupported();
     }
 
     //Approve himalayaConnext to pull funds
@@ -101,7 +105,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
         migration.debtAmount
       );
     } else {
-      revert("Market not supported");
+      revert HimalayaCompound__receiveXMigration_marketNotSupported();
     }
 
     return true;
