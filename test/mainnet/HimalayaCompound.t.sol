@@ -43,7 +43,11 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     //Deposit 100 WETH into CompoundV2
     vm.startPrank(ALICE);
     _utils_depositV2_mainnet(AMOUNT_SUPPLY_WETH, WETH);
-    assertApproxEqAbs(compoundV2.getDepositBalanceV2(ALICE, address(cETHV2)), AMOUNT_SUPPLY_WETH, AMOUNT_SUPPLY_WETH/ 10);
+    assertApproxEqAbs(
+      compoundV2.getDepositBalanceV2(ALICE, address(cETHV2)),
+      AMOUNT_SUPPLY_WETH,
+      AMOUNT_SUPPLY_WETH / 10
+    );
     assertGt(compoundV2.getDepositBalanceV2(ALICE, address(cETHV2)), AMOUNT_SUPPLY_WETH);
     assertEq(IERC20(WETH).balanceOf(address(compoundV2)), 0);
 
