@@ -21,7 +21,9 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
 
   //@dev custom error
   error HimalayaCompound__beginXMigration_marketNotSupported();
-  error HimalayaCompound__receiveXMigration_marketNotSupported(); 
+  error HimalayaCompound__receiveXMigration_marketNotSupported();
+  error HimalayaCompound__handleOutboundFromV2_invalidAmount();
+  error HimalayaCompound__handleOutboundFromV3_invalidAmount();
 
   mapping(address => bool) public isMarketV2;
   mapping(address => bool) public isMarketV3;
@@ -59,22 +61,14 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   }
 
   function beginXMigration(Migration memory migration) external returns (bytes32 transferId) {
-    //TODO check parameters
-
     //Identify market
     if (isMarketV2[migration.fromMarket]) {
       _handleOutboundFromV2(
-        migration.owner,
-        migration.fromMarket,
-        migration.assetOrigin,
-        migration.amount
+        migration.owner, migration.fromMarket, migration.assetOrigin, migration.amount
       );
     } else if (isMarketV3[migration.fromMarket]) {
       _handleOutboundFromV3(
-        migration.owner,
-        migration.fromMarket,
-        migration.assetOrigin,
-        migration.amount
+        migration.owner, migration.fromMarket, migration.assetOrigin, migration.amount
       );
     } else {
       revert HimalayaCompound__beginXMigration_marketNotSupported();
@@ -118,6 +112,10 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     internal
     returns (bool)
   {
+    if (amount == 0 || amount > getDepositBalanceV2(owner, fromMarket)) {
+      revert HimalayaCompound__handleOutboundFromV2_invalidAmount();
+    }
+
     //Pull cTokens from user
     uint256 cTokenBalance = IERC20(fromMarket).balanceOf(owner);
     SafeERC20.safeTransferFrom(IERC20(fromMarket), owner, address(this), cTokenBalance);
@@ -137,6 +135,10 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     internal
     returns (bool)
   {
+    if (amount == 0 || amount > getDepositBalanceV3(owner, address(asset), fromMarket)) {
+      revert HimalayaCompound__handleOutboundFromV3_invalidAmount();
+    }
+
     //TODO payback?
 
     //Withdraw funds from V3
