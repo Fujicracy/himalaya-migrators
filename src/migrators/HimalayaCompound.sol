@@ -75,7 +75,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     }
 
     //Approve himalayaConnext to pull funds
-    SafeERC20.safeApprove(migration.assetOrigin, address(himalayaConnext), migration.amount);
+    migration.assetOrigin.safeIncreaseAllowance(address(himalayaConnext), migration.amount);
 
     transferId = himalayaConnext.xCall(migration);
   }
@@ -89,6 +89,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
 
     if (!isMarketV3[migration.toMarket]) {
       revert HimalayaCompound__receiveXMigration_marketNotSupported();
+    }
 
     _handleInboundToV3(
       migration.owner,
