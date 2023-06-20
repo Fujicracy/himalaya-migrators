@@ -37,13 +37,14 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
   }
 
   function test_handleOutboundFromV2ToV3() public {
-    deal(WETH, ALICE, 100e18);
-    assertEq(IERC20(WETH).balanceOf(ALICE), 100e18);
+    deal(WETH, ALICE, AMOUNT_SUPPLY_WETH);
+    assertEq(IERC20(WETH).balanceOf(ALICE), AMOUNT_SUPPLY_WETH);
 
     //Deposit 100 WETH into CompoundV2
     vm.startPrank(ALICE);
-    _utils_depositV2_mainnet(100e18, WETH);
-    assertApproxEqAbs(compoundV2.getDepositBalanceV2(ALICE, address(cETHV2)), 100e18, 100e18 / 10);
+    _utils_depositV2_mainnet(AMOUNT_SUPPLY_WETH, WETH);
+    assertApproxEqAbs(compoundV2.getDepositBalanceV2(ALICE, address(cETHV2)), AMOUNT_SUPPLY_WETH, AMOUNT_SUPPLY_WETH/ 10);
+    assertGt(compoundV2.getDepositBalanceV2(ALICE, address(cETHV2)), AMOUNT_SUPPLY_WETH);
     assertEq(IERC20(WETH).balanceOf(address(compoundV2)), 0);
 
     //Migrate 100 WETH deposit position from CompoundV2 to CompoundV3
@@ -55,7 +56,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     migration.toMarket = cWETHV3;
     migration.assetOrigin = IERC20(WETH);
     migration.assetDest = IERC20(WETH_Polygon);
-    migration.amount = 100e18;
+    migration.amount = AMOUNT_SUPPLY_WETH;
     migration.debtAssetOrigin = IERC20(address(0)); //TODO
     migration.debtAssetDest = IERC20(address(0)); //TODO
     migration.debtAmount = 0;
