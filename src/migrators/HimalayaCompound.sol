@@ -64,7 +64,6 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     //Identify market
     if (isMarketV2[migration.fromMarket]) {
       _handleOutboundFromV2(
-        migration.toChain,
         migration.owner,
         migration.fromMarket,
         migration.assetOrigin,
@@ -72,7 +71,6 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
       );
     } else if (isMarketV3[migration.fromMarket]) {
       _handleOutboundFromV3(
-        migration.toChain,
         migration.owner,
         migration.fromMarket,
         migration.assetOrigin,
@@ -112,7 +110,6 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   }
 
   function _handleOutboundFromV2(
-    uint128, /* toChain */
     address owner,
     address fromMarket,
     IERC20 asset,
@@ -132,7 +129,6 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   }
 
   function _handleOutboundFromV3(
-    uint128, /* toChain */
     address owner,
     address fromMarket,
     IERC20 asset,
