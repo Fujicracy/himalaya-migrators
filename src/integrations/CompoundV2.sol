@@ -160,7 +160,7 @@ contract CompoundV2 {
     address user,
     address cTokenAddr
   )
-    external
+    public
     view
     returns (uint256 balance)
   {
@@ -172,7 +172,7 @@ contract CompoundV2 {
     address user,
     address cTokenAddr
   )
-    external
+    public
     view
     returns (uint256 balance)
   {

@@ -75,7 +75,7 @@ contract CompoundV3 {
     address asset,
     address cMarketV3
   )
-    external
+    public
     view
     returns (uint256 balance)
   {
@@ -91,7 +91,7 @@ contract CompoundV3 {
     address debtAsset,
     address cMarketV3
   )
-    external
+    public
     view
     returns (uint256 balance)
   {
