@@ -43,6 +43,10 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     //Deposit 100 WETH into CompoundV2
     vm.startPrank(ALICE);
     _utils_depositV2_mainnet(AMOUNT_SUPPLY_WETH, WETH);
+
+    vm.warp(block.timestamp + 13 seconds);
+    vm.roll(block.number + 1);
+
     assertApproxEqAbs(
       compoundV2.getDepositBalanceV2(ALICE, address(cETHV2)),
       AMOUNT_SUPPLY_WETH,
