@@ -46,6 +46,52 @@ contract HimalayaCompoundUtils is Test {
     vm.label(cUSDCV3_Arbitrum, "cUSDCV3_Arbitrum");
   }
 
+  function addMarketsDestChain_mainnet() internal {
+    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
+
+    uint48[] memory chainIds = new uint48[](2);
+    chainIds[0] = 137;
+    chainIds[1] = 42161;
+
+    address[] memory markets = new address[](2);
+    markets[0] = cUSDCV3_Polygon; //polygon cUSDCV3
+    markets[1] = cUSDCV3_Arbitrum; //arbitrum cUSDCV3
+
+    hc.addMarketsDestChain(chainIds, markets);
+  }
+
+  function addMarketsDestChain_arbitrum() internal {
+    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
+
+    uint48[] memory chainIds = new uint48[](3);
+    chainIds[0] = 137;
+    chainIds[1] = 1;
+    chainIds[2] = 1;
+
+    address[] memory markets = new address[](3);
+    markets[0] = cUSDCV3_Polygon; //polygon cUSDCV3
+    markets[1] = cUSDCV3; //mainnet cUSDCV3
+    markets[2] = cWETHV3; //mainnet cWETHV3
+
+    hc.addMarketsDestChain(chainIds, markets);
+  }
+
+  function addMarketsDestChain_polygon() internal {
+    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
+
+    uint48[] memory chainIds = new uint48[](3);
+    chainIds[0] = 42161;
+    chainIds[1] = 1;
+    chainIds[2] = 1;
+
+    address[] memory markets = new address[](3);
+    markets[0] = cUSDCV3_Arbitrum; //arbitrum cUSDCV3
+    markets[1] = cUSDCV3; //mainnet cUSDCV3
+    markets[2] = cWETHV3; //mainnet cWETHV3
+
+    hc.addMarketsDestChain(chainIds, markets);
+  }
+
   function _utils_depositV2_mainnet(uint256 amount, address asset) internal {
     address cTokenAddr = address(cETHV2);
 
