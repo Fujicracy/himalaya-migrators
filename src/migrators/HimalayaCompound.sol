@@ -24,6 +24,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   error HimalayaCompound__receiveXMigration_marketNotSupported();
   error HimalayaCompound__handleOutboundFromV2_invalidAmount();
   error HimalayaCompound__handleOutboundFromV3_invalidAmount();
+  error HimalayaCompound__beginXMigration_fromChainNotSupported();
 
   mapping(address => bool) public isMarketV2;
   mapping(address => bool) public isMarketV3;
@@ -61,6 +62,9 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   }
 
   function beginXMigration(Migration memory migration) external returns (bytes32 transferId) {
+    if(block.chainid != migration.fromChain) {
+      revert HimalayaCompound__beginXMigration_fromChainNotSupported();
+    }
     //Identify market
     if (isMarketV2[migration.fromMarket]) {
       _handleOutboundFromV2(
