@@ -25,9 +25,13 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   error HimalayaCompound__handleOutboundFromV2_invalidAmount();
   error HimalayaCompound__handleOutboundFromV3_invalidAmount();
   error HimalayaCompound__beginXMigration_fromChainNotSupported();
+  error HimalayaCompound__addMarketsDestChain_invalidInput();
 
   mapping(address => bool) public isMarketV2;
   mapping(address => bool) public isMarketV3;
+
+  //destChainId => marketOnDestChain => isMarketOnDestChain
+  mapping(uint48 => mapping(address => bool)) public isMarketOnDestChain;
 
   IHimalayaConnext public immutable himalayaConnext;
 
@@ -62,9 +66,13 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   }
 
   function beginXMigration(Migration memory migration) external returns (bytes32 transferId) {
-    if(block.chainid != migration.fromChain) {
+    if (block.chainid != migration.fromChain) {
       revert HimalayaCompound__beginXMigration_fromChainNotSupported();
     }
+    if (!isMarketOnDestChain[migration.toChain][migration.toMarket]) {
+      revert HimalayaCompound__beginXMigration_marketNotSupported();
+    }
+
     //Identify market
     if (isMarketV2[migration.fromMarket]) {
       _handleOutboundFromV2(
@@ -105,6 +113,16 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     );
 
     return true;
+  }
+
+  function addMarketsDestChain(uint48[] memory chainIds, address[] memory markets) external {
+    if (chainIds.length != markets.length) {
+      revert HimalayaCompound__addMarketsDestChain_invalidInput();
+    }
+
+    for (uint256 i = 0; i < chainIds.length; i++) {
+      isMarketOnDestChain[chainIds[i]][markets[i]] = true;
+    }
   }
 
   function _handleOutboundFromV2(
