@@ -13,18 +13,19 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 interface IHimalayaMigrator {
   struct Migration {
-    address owner;
-    address fromMarket;
-    address toMarket;
-    IERC20 assetOrigin;
-    IERC20 assetDest;
-    uint256 amount;
-    IERC20 debtAssetOrigin;
-    IERC20 debtAssetDest;
-    uint256 debtAmount;
-    uint128 fromChain;
-    uint128 toChain;
-    address himalaya; //address of himalaya on destination chain
+    address owner; // user who wants to migrate or owner of the position to be migrated
+    uint48 fromChainId; // chain from which position will be migrated
+    uint48 toChainId; // chain to which migration will be sent to
+    address fromMarket; // market on origin chain which owner's position is in
+    address toMarket; // market on destination chain which owner's position will be migrated to
+    IERC20 assetOrigin; // ERC20 token that is deposited on origin chain
+    IERC20 assetDest; // adopted ERC20 token that represents origin asset at destination chain
+    uint256 amount; // amount of ERC20 deposit to be migrated
+    IERC20 debtAssetOrigin; // ERC20 token that is borrowed on origin chain
+    IERC20 debtAssetDest; // adopted ERC20 token that represent origin debt asset at destination chain
+    uint256 debtAmount; // amount of debt being migrated
+    address himalaya; //address of IHimalayaMigrator on destination chain
+    uint256 deadline; //period to execute this migration
   }
 
   function beginXMigration(Migration memory migration) external returns (bytes32 transferId);
