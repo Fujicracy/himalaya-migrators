@@ -24,16 +24,37 @@ contract HimalayaCompoundUtils is Test {
   IHimalayaMigrator public himalayaCompound; //TODO create also for other chains (himalayaCompoundArbitrum and polygon after contracts have been created)
 
   //Mainnet Compound Markets
-  IERC20 public cETHV2 = IERC20(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5);
+  IERC20 public cETHV2 = IERC20(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5); //cETH
+  IERC20 public cDAIV2 = IERC20(0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643); //cDAI
+  IERC20 public cUSDCV2 = IERC20(0x39AA39c021dfbaE8faC545936693aC917d5E7563); //cUSDC
+  IERC20 public cUSDTV2 = IERC20(0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9); //cUSDT
   address public cWETHV3 = 0xA17581A9E3356d9A858b789D68B4d866e593aE94;
   address public cUSDCV3 = 0xc3d688B66703497DAA19211EEdff47f25384cdc3;
+
   //Polygon Compound Markets
   address public cUSDCV3_Polygon = 0xF25212E676D1F7F89Cd72fFEe66158f541246445;
+
   //Arbitrum Compound Markets
   address public cUSDCV3_Arbitrum = 0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA;
 
+  // IERC20 public cAAVEV2 = 0xe65cdB6479BaC1e22340E4E755fAE7E509EcD06c; //cAAVE
+  // IERC20 public cBATV2 = 0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E; //cBAT
+  // IERC20 public cCOMPV2 = 0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4; //cCOMP
+  // IERC20 public cFEIV2 = 0x7713DD9Ca933848F6819F38B8352D9A15EA73F67; //cFEI
+  // IERC20 public cLINKV2 = 0xFAce851a4921ce59e912d19329929CE6da6EB0c7; //cLINK
+  // IERC20 public cMKRV2 = 0x95b4eF2869eBD94BEb4eEE400a99824BF5DC325b; //cMKR
+  // IERC20 public cREPV2 = 0x158079Ee67Fce2f58472A96584A73C7Ab9AC95c1; //cREP
+  // IERC20 public cSAIV2 = 0xF5DCe57282A584D2746FaF1593d3121Fcac444dC; //cSAI
+  // IERC20 public cSUSHIV2 = 0x4B0181102A0112A2ef11AbEE5563bb4a3176c9d7; //cSUSHI
+  // IERC20 public cTUSDV2 = 0x12392F67bdf24faE0AF363c24aC620a2f67DAd86; //cTUSD
+  // IERC20 public cUNIV2 = 0x35A18000230DA775CAc24873d00Ff85BccdeD550; //cUNI
+  // IERC20 public cUSDPV2 = 0x041171993284df560249B57358F931D9eB7b925D; //cUSDP
+  // IERC20 public cWBTCV2 = 0xC11b1268C1A384e55C48c2391d8d480264A3A7F4; //cWBTC
+  // IERC20 public cWBTC2V2 = 0xccF4429DB6322D5C611ee964527D42E5d685DD6a; //cWBTC2
+  // IERC20 public cYFIV2 = 0x80a2AE356fc9ef4305676f7a3E2Ed04e12C33946; //cYFI
+  // IERC20 public cZRXV2 = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643; //cZRX
+
   function setLabelsCompound() internal {
-    //TODO rename this function and set this labels dynamically according to the chain
     vm.label(address(compoundV2), "compoundV2");
     vm.label(address(compoundV3), "compoundV3");
     vm.label(address(himalayaCompound), "himalayaCompound");
@@ -44,6 +65,40 @@ contract HimalayaCompoundUtils is Test {
 
     vm.label(cUSDCV3_Polygon, "cUSDCV3_Polygon");
     vm.label(cUSDCV3_Arbitrum, "cUSDCV3_Arbitrum");
+  }
+
+  function addMarkets_mainnet() internal {
+    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
+
+    address[] memory marketsV2 = new address[](3);
+    marketsV2[0] = address(cETHV2);
+    marketsV2[1] = address(cUSDCV2);
+    marketsV2[2] = address(cUSDTV2);
+
+    address[] memory marketsV3 = new address[](2);
+    marketsV3[0] = cWETHV3;
+    marketsV3[1] = cUSDCV3;
+
+    hc.addMarketsV2(marketsV2);
+    hc.addMarketsV3(marketsV3);
+  }
+
+  function addMarkets_polygon() internal {
+    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
+
+    address[] memory marketsV3 = new address[](1);
+    marketsV3[0] = cUSDCV3_Polygon;
+
+    hc.addMarketsV3(marketsV3);
+  }
+
+  function addMarkets_arbitrum() internal {
+    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
+
+    address[] memory marketsV3 = new address[](1);
+    marketsV3[0] = cUSDCV3_Arbitrum;
+
+    hc.addMarketsV3(marketsV3);
   }
 
   function addMarketsDestChain_mainnet() internal {
