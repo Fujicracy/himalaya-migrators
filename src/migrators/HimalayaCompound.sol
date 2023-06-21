@@ -84,12 +84,12 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     Migration memory migration = abi.decode(data, (Migration));
     //TODO check parameters
 
-    //Pull funds from HimalayaConnext
-    SafeERC20.safeTransferFrom(migration.assetDest, msg.sender, address(this), migration.amount);
-
     if (!isMarketV3[migration.toMarket]) {
       revert HimalayaCompound__receiveXMigration_marketNotSupported();
     }
+
+    //Pull funds from HimalayaConnext
+    SafeERC20.safeTransferFrom(migration.assetDest, msg.sender, address(this), migration.amount);
 
     _handleInboundToV3(
       migration.owner,
