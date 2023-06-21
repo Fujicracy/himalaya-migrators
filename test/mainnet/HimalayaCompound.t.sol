@@ -35,6 +35,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     setLabels();
     setLabelsCompound();
     addMarketsDestChain_mainnet();
+    addMarkets_mainnet();
   }
 
   function test_handleOutboundFromV2ToV3() public {
