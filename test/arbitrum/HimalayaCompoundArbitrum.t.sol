@@ -34,6 +34,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
 
     setLabels();
     setLabelsCompound();
+    addMarketsDestChain_arbitrum();
   }
 
   function test_handleOutboundFromV3ToV3() public {

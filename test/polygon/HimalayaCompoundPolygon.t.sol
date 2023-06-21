@@ -34,6 +34,7 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
 
     setLabels();
     setLabelsCompound();
+    addMarketsDestChain_polygon();
   }
 
   function test_handleOutboundFromV3ToV3() public {

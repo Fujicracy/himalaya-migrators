@@ -34,6 +34,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
 
     setLabels();
     setLabelsCompound();
+    addMarketsDestChain_mainnet();
   }
 
   function test_handleOutboundFromV2ToV3() public {
@@ -61,7 +62,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     IHimalayaMigrator.Migration memory migration;
     migration.owner = ALICE;
     migration.fromMarket = address(cETHV2);
-    migration.toMarket = cWETHV3;
+    migration.toMarket = cUSDCV3_Polygon;
     migration.assetOrigin = IERC20(WETH);
     migration.assetDest = IERC20(WETH_Polygon);
     migration.amount = AMOUNT_SUPPLY_WETH;
