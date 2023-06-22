@@ -26,7 +26,9 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   error HimalayaCompound__handleOutboundFromV3_invalidAmount();
   error HimalayaCompound__beginXMigration_fromChainNotSupported();
   error HimalayaCompound__addMarketsDestChain_invalidInput();
+  error HimalayaCompound__onlyAdmin_notAuthorized();
 
+  //marketAddress => isMarket
   mapping(address => bool) public isMarketV2;
   mapping(address => bool) public isMarketV3;
 
@@ -35,8 +37,18 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
 
   IHimalayaConnext public immutable himalayaConnext;
 
+  address public immutable admin;
+
+  modifier onlyAdmin() {
+    if (msg.sender != admin) {
+      revert HimalayaCompound__onlyAdmin_notAuthorized();
+    }
+    _;
+  }
+
   constructor(address _himalayaConnext) {
     himalayaConnext = IHimalayaConnext(_himalayaConnext);
+    admin = msg.sender;
   }
 
   function beginXMigration(Migration memory migration) external returns (bytes32 transferId) {
@@ -89,7 +101,13 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     return true;
   }
 
-  function addMarketsDestChain(uint48[] memory chainIds, address[] memory markets) external {
+  function addMarketsDestChain(
+    uint48[] memory chainIds,
+    address[] memory markets
+  )
+    external
+    onlyAdmin
+  {
     if (chainIds.length != markets.length) {
       revert HimalayaCompound__addMarketsDestChain_invalidInput();
     }
@@ -99,13 +117,13 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     }
   }
 
-  function addMarketsV2(address[] memory markets) external {
+  function addMarketsV2(address[] memory markets) external onlyAdmin {
     for (uint256 i = 0; i < markets.length; i++) {
       isMarketV2[markets[i]] = true;
     }
   }
 
-  function addMarketsV3(address[] memory markets) external {
+  function addMarketsV3(address[] memory markets) external onlyAdmin {
     for (uint256 i = 0; i < markets.length; i++) {
       isMarketV3[markets[i]] = true;
     }
