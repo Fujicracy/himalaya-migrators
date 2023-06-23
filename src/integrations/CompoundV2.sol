@@ -8,7 +8,6 @@ pragma solidity 0.8.15;
  *
  * @notice This contract allows interaction with CompoundV2.
  *
- * @dev The IAddrMapper needs to be properly configured for CompoundV2
  */
 
 import {LibCompoundV2} from "@fuji-v2/src/libraries/LibCompoundV2.sol";
@@ -161,7 +160,7 @@ contract CompoundV2 {
     address user,
     address cTokenAddr
   )
-    external
+    public
     view
     returns (uint256 balance)
   {
@@ -173,7 +172,7 @@ contract CompoundV2 {
     address user,
     address cTokenAddr
   )
-    external
+    public
     view
     returns (uint256 balance)
   {

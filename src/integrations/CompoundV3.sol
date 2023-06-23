@@ -8,8 +8,6 @@ pragma solidity 0.8.15;
  *
  * @notice This contract allows interaction with CompoundV3.
  *
- * @dev The IAddrMapper needs to be properly configured for CompoundV3.
- * See `_getMarketAndAssets`.
  */
 
 import {ICompoundV3} from "@fuji-v2/src/interfaces/compoundV3/ICompoundV3.sol";
@@ -47,6 +45,7 @@ contract CompoundV3 {
 
   function withdrawV3(
     address user,
+    address receiver,
     uint256 amount,
     address asset,
     address cMarketV3
@@ -54,7 +53,7 @@ contract CompoundV3 {
     internal
     returns (bool success)
   {
-    ICompoundV3(cMarketV3).withdrawFrom(user, user, asset, amount);
+    ICompoundV3(cMarketV3).withdrawFrom(user, receiver, asset, amount);
     success = true;
   }
 
@@ -76,7 +75,7 @@ contract CompoundV3 {
     address asset,
     address cMarketV3
   )
-    external
+    public
     view
     returns (uint256 balance)
   {
@@ -92,7 +91,7 @@ contract CompoundV3 {
     address debtAsset,
     address cMarketV3
   )
-    external
+    public
     view
     returns (uint256 balance)
   {
@@ -100,5 +99,4 @@ contract CompoundV3 {
       balance = ICompoundV3(cMarketV3).borrowBalanceOf(user);
     }
   }
-
 }
