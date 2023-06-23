@@ -64,7 +64,6 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
     migration.debtAssetDest = IERC20(USDC_Arbitrum);
     // migration.debtAmount = AMOUNT_BORROW_USDC;//TODO add borrow before migration
     migration.debtAmount = 0;
-    migration.fromChain = 137; //Polygon
     migration.toChain = 42161; //Arbitrum
     migration.himalaya = address(himalayaConnext_Polygon);
 
@@ -88,7 +87,6 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
     migration.debtAssetOrigin = IERC20(USDC_Arbitrum);
     migration.debtAssetDest = IERC20(USDC_Polygon);
     migration.debtAmount = AMOUNT_BORROW_USDC;
-    migration.fromChain = 42161; //Arbitrum
     migration.toChain = 137; //Polygon
     migration.himalaya = address(himalayaCompound);
 
@@ -123,7 +121,6 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
     migration.debtAssetOrigin = IERC20(USDC_Arbitrum);
     migration.debtAssetDest = IERC20(USDC_Polygon);
     migration.debtAmount = AMOUNT_BORROW_USDC;
-    migration.fromChain = 42161; //Arbitrum
     migration.toChain = 137; //Polygon
     migration.himalaya = address(himalayaCompound);
 
