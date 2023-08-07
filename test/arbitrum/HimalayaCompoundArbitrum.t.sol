@@ -62,7 +62,6 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
     migration.amount = AMOUNT_SUPPLY_WETH;
     migration.debtAssetOrigin = IERC20(USDC_Arbitrum);
     migration.debtAssetDest = IERC20(USDC_Polygon);
-    // migration.debtAmount = AMOUNT_BORROW_USDC;//TODO add borrow before migration
     migration.debtAmount = 0;
     migration.toChain = 137; //Polygon
     migration.himalaya = address(himalayaConnext_Polygon);
