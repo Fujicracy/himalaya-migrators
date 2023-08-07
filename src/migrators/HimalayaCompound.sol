@@ -26,6 +26,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   error HimalayaCompound__handleOutboundFromV3_invalidAmount();
   error HimalayaCompound__addMarketsDestChain_invalidInput();
   error HimalayaCompound__onlyAdmin_notAuthorized();
+  error HimalayaCompound__handleOutboundFromV2_invalidDebtAmount();
 
   //marketAddress => isMarket
   mapping(address => bool) public isMarketV2;
@@ -58,11 +59,11 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     //Identify market
     if (isMarketV2[migration.fromMarket]) {
       _handleOutboundFromV2(
-        migration.owner, migration.fromMarket, migration.assetOrigin, migration.amount
+        migration
       );
     } else if (isMarketV3[migration.fromMarket]) {
       _handleOutboundFromV3(
-        migration.owner, migration.fromMarket, migration.assetOrigin, migration.amount
+        migration
       );
     } else {
       revert HimalayaCompound__beginXMigration_marketNotSupported();
@@ -126,33 +127,41 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   }
 
   function _handleOutboundFromV2(
-    address owner,
-    address fromMarket,
-    IERC20 asset,
-    uint256 amount
+    Migration memory migration
   )
     internal
     returns (bool)
   {
-    if (amount == 0 || amount > getDepositBalanceV2(owner, fromMarket)) {
+    if (migration.amount == 0) {
       revert HimalayaCompound__handleOutboundFromV2_invalidAmount();
+    }
+    if (migration.amount > getDepositBalanceV2(migration.owner, migration.fromMarket)) {
+      migration.amount = getDepositBalanceV2(migration.owner, migration.fromMarket);
+    }
+    if (migration.debtAmount != 0) {
+      if (migration.debtAmount > getBorrowBalanceV2(migration.owner, migration.fromDebtMarket)) {
+        migration.debtAmount = getBorrowBalanceV2(migration.owner, migration.fromDebtMarket);
+      }
+      //Pull debt tokens from user
+      SafeERC20.safeTransferFrom(migration.debtAssetOrigin, migration.owner, address(this), migration.debtAmount);
+      //Approve debt tokens to be repaid
+      SafeERC20.safeIncreaseAllowance(migration.debtAssetOrigin, migration.fromDebtMarket, migration.debtAmount);
+      //Repay debt
+      paybackV2(migration.owner, migration.debtAmount, address(migration.debtAssetOrigin), migration.fromDebtMarket);
     }
 
     //Pull cTokens from user
-    uint256 cTokenBalance = IERC20(fromMarket).balanceOf(owner);
-    SafeERC20.safeTransferFrom(IERC20(fromMarket), owner, address(this), cTokenBalance);
+    uint256 cTokenBalance = IERC20(migration.fromMarket).balanceOf(migration.owner);
+    SafeERC20.safeTransferFrom(IERC20(migration.fromMarket), migration.owner, address(this), cTokenBalance);
 
     //Withdraw funds from V2
-    withdrawV2(amount, address(asset), fromMarket);
+    withdrawV2(migration.amount, address(migration.assetOrigin), migration.fromMarket);
 
     return true;
   }
 
   function _handleOutboundFromV3(
-    address owner,
-    address fromMarket,
-    IERC20 asset,
-    uint256 amount
+    Migration memory migration
   )
     internal
     returns (bool)
