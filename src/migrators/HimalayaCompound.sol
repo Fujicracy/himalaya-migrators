@@ -77,7 +77,6 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
 
   function receiveXMigration(bytes memory data) external returns (bool) {
     Migration memory migration = abi.decode(data, (Migration));
-    //TODO check parameters
 
     if (!isMarketV3[migration.toMarket]) {
       revert HimalayaCompound__receiveXMigration_marketNotSupported();
@@ -166,14 +165,12 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     internal
     returns (bool)
   {
-    if (amount == 0 || amount > getDepositBalanceV3(owner, address(asset), fromMarket)) {
+    if (migration.amount == 0 || migration.amount > getDepositBalanceV3(migration.owner, address(migration.assetOrigin), migration.fromMarket)) {
       revert HimalayaCompound__handleOutboundFromV3_invalidAmount();
     }
 
-    //TODO payback?
-
     //Withdraw funds from V3
-    withdrawV3(owner, address(this), amount, address(asset), fromMarket);
+    withdrawV3(migration.owner, address(this), migration.amount, address(migration.assetOrigin), migration.fromMarket);
 
     return true;
   }
