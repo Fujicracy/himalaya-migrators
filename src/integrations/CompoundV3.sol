@@ -58,6 +58,7 @@ contract CompoundV3 {
   }
 
   function paybackV3(
+    address user,
     uint256 amount,
     address debtAsset,
     address cMarketV3
@@ -66,7 +67,7 @@ contract CompoundV3 {
     returns (bool success)
   {
     // From Coment docs: 'supply' the base asset to repay an open borrow of the base asset.
-    ICompoundV3(cMarketV3).supply(debtAsset, amount);
+    ICompoundV3(cMarketV3).supplyTo(user, debtAsset, amount);
     success = true;
   }
 

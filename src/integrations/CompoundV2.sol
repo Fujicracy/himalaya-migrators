@@ -132,6 +132,7 @@ contract CompoundV2 {
   }
 
   function paybackV2(
+    address user,
     uint256 amount,
     address asset,
     address cTokenAddr
@@ -144,11 +145,11 @@ contract CompoundV2 {
       // unwrap WETH to ETH
       IWETH9(asset).withdraw(amount);
 
-      cETH.repayBorrow{value: amount}();
+      cETH.repayBorrowBehalf{value: amount}(user);
     } else {
       ICERC20 cToken = ICERC20(cTokenAddr);
 
-      uint256 status = cToken.repayBorrow(amount);
+      uint256 status = cToken.repayBorrowBehalf(user, amount);
       if (status != 0) {
         revert CompoundV2__payback_failed(status);
       }
