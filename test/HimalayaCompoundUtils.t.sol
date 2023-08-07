@@ -21,7 +21,7 @@ contract HimalayaCompoundUtils is Test {
   CompoundV3 public compoundV3;
 
   //HimalayaCompound
-  IHimalayaMigrator public himalayaCompound; //TODO create also for other chains (himalayaCompoundArbitrum and polygon after contracts have been created)
+  IHimalayaMigrator public himalayaCompound;
 
   //Mainnet Compound Markets
   IERC20 public cETHV2 = IERC20(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5); //cETH
@@ -168,6 +168,13 @@ contract HimalayaCompoundUtils is Test {
 
     uint256 balanceCTokenAfter = IERC20(cTokenAddr).balanceOf(address(this));
     IERC20(cTokenAddr).transfer(msg.sender, balanceCTokenAfter - balanceCTokenBefore);
+  }
+
+  function _utils_borrowV2_mainnet(uint256 amount, address market) internal {
+    ICToken cToken = ICToken(address(market));
+
+    uint256 status = cToken.borrow(amount);
+    require(status == 0, "borrow failed");
   }
 
   function _enterCollatMarketV2_mainnet(address asset) private {
