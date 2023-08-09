@@ -140,10 +140,6 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     assertEq(compoundV2.getBorrowBalanceV2(ALICE, address(cUSDCV2)), 0);
   }
 
-  function test_handleOutboundWithBorrowFromV3ToV3WithBorrow() public {
-    assert(false);
-  }
-
   function test_handleOutboundFromV3ToV3() public {
     deal(WETH, ALICE, AMOUNT_SUPPLY_WETH);
     assertEq(IERC20(WETH).balanceOf(ALICE), AMOUNT_SUPPLY_WETH);
@@ -178,6 +174,61 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     himalayaCompound.beginXMigration(migration);
     assertEq(IERC20(WETH).balanceOf(address(himalayaCompound)), 0);
     assertEq(compoundV3.getDepositBalanceV3(ALICE, WETH, cUSDCV3), 0);
+  }
+
+  function test_handleOutboundWithBorrowFromV3ToV3() public {
+    deal(WETH, ALICE, AMOUNT_SUPPLY_WETH);
+    assertEq(IERC20(WETH).balanceOf(ALICE), AMOUNT_SUPPLY_WETH);
+    deal(USDC, ALICE, AMOUNT_BORROW_USDC * 10);
+    assertEq(IERC20(USDC).balanceOf(ALICE), AMOUNT_BORROW_USDC * 10);
+
+    //Deposit 100 WETH into CompoundV3 on mainnet
+    vm.startPrank(ALICE);
+    IERC20(WETH).approve(address(cUSDCV3), AMOUNT_SUPPLY_WETH);
+    _utils_depositV3(AMOUNT_SUPPLY_WETH, WETH, cUSDCV3);
+    assertApproxEqAbs(
+      compoundV3.getDepositBalanceV3(ALICE, WETH, cUSDCV3),
+      AMOUNT_SUPPLY_WETH,
+      AMOUNT_SUPPLY_WETH / 10
+    );
+    _utils_borrowV3(AMOUNT_BORROW_USDC, USDC, cUSDCV3);
+    assertApproxEqAbs(
+      compoundV3.getBorrowBalanceV3(ALICE, USDC, cUSDCV3),
+      AMOUNT_BORROW_USDC,
+      AMOUNT_BORROW_USDC / 10
+    );
+
+    for(uint i = 0; i < 10; i++) {
+      vm.warp(block.timestamp + 13 seconds);
+      vm.roll(block.number + 1);
+    }
+
+    //Migrate 100 WETH deposit position from CompoundV3 on mainnet to CompoundV3 on other chain
+    IHimalayaMigrator.Migration memory migration;
+    migration.owner = ALICE;
+    migration.fromMarket = cUSDCV3;
+    migration.toMarket = cUSDCV3_Polygon;
+    migration.assetOrigin = IERC20(WETH);
+    migration.assetDest = IERC20(WETH_Polygon);
+    migration.amount = AMOUNT_SUPPLY_WETH;
+    migration.fromDebtMarket = cUSDCV3;
+    migration.debtAssetOrigin = IERC20(USDC);
+    migration.debtAssetDest = IERC20(USDC_Polygon);
+    migration.debtAmount = AMOUNT_BORROW_USDC;
+    migration.toChain = 137; //Polygon
+    migration.himalaya = address(himalayaConnext_Polygon);
+
+    //approve himalayaCompound as operator on V3 originChain
+    ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);
+    //approve market to pull debtAsset to payback debt
+    //debt may have grown due to interest
+    IERC20(USDC).approve(address(cUSDCV3), AMOUNT_BORROW_USDC * 10);
+
+    himalayaCompound.beginXMigration(migration);
+    assertEq(IERC20(WETH).balanceOf(address(himalayaCompound)), 0);
+    assertEq(compoundV3.getDepositBalanceV3(ALICE, WETH, cUSDCV3), 0);
+    assertEq(IERC20(USDC).balanceOf(address(himalayaCompound)), 0);
+    assertEq(compoundV3.getBorrowBalanceV3(ALICE, USDC, cUSDCV3), 0);
   }
 
   function test_handleInboundToV3() public {

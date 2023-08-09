@@ -177,6 +177,10 @@ contract HimalayaCompoundUtils is Test {
     require(status == 0, "borrow failed");
   }
 
+  function _utils_borrowV3(uint256 amount, address asset, address market) public {
+      ICompoundV3(market).withdraw(asset, amount);
+  }
+
   function _enterCollatMarketV2_mainnet(address asset) private {
     IComptroller comptroller = IComptroller(0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B);
 
@@ -194,7 +198,6 @@ contract HimalayaCompoundUtils is Test {
   }
 
   function _utils_depositV3(
-    // address user,
     uint256 amount,
     address asset,
     address cMarketV3
