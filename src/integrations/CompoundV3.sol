@@ -67,7 +67,7 @@ contract CompoundV3 {
     returns (bool success)
   {
     // From Coment docs: 'supply' the base asset to repay an open borrow of the base asset.
-    ICompoundV3(cMarketV3).supplyTo(user, debtAsset, amount);
+    ICompoundV3(cMarketV3).supplyFrom(user, user, debtAsset, amount);
     success = true;
   }
 
