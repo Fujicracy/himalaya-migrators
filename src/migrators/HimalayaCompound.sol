@@ -141,7 +141,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
       if (migration.debtAmount > getBorrowBalanceV2(migration.owner, migration.fromDebtMarket)) {
         migration.debtAmount = getBorrowBalanceV2(migration.owner, migration.fromDebtMarket);
       }
-      //Pull debt tokens from user
+      //Pull debtAsset from user
       SafeERC20.safeTransferFrom(migration.debtAssetOrigin, migration.owner, address(this), migration.debtAmount);
       //Approve debt tokens to be repaid
       SafeERC20.safeIncreaseAllowance(migration.debtAssetOrigin, migration.fromDebtMarket, migration.debtAmount);
@@ -165,8 +165,17 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     internal
     returns (bool)
   {
-    if (migration.amount == 0 || migration.amount > getDepositBalanceV3(migration.owner, address(migration.assetOrigin), migration.fromMarket)) {
+    if (migration.amount == 0) {
       revert HimalayaCompound__handleOutboundFromV3_invalidAmount();
+    }
+    if(migration.debtAmount !=0){
+      if(migration.debtAmount > getBorrowBalanceV3(migration.owner, address(migration.debtAssetOrigin), migration.fromDebtMarket)){
+        migration.debtAmount = getBorrowBalanceV3(migration.owner, address(migration.debtAssetOrigin), migration.fromDebtMarket);
+      }
+      paybackV3(migration.owner, migration.debtAmount, address(migration.debtAssetOrigin), migration.fromDebtMarket);
+    }
+    if(migration.amount > getDepositBalanceV3(migration.owner, address(migration.assetOrigin), migration.fromMarket)){
+      migration.amount = getDepositBalanceV3(migration.owner, address(migration.assetOrigin), migration.fromMarket);
     }
 
     //Withdraw funds from V3
