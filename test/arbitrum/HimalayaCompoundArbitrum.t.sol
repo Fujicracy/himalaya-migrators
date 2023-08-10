@@ -141,4 +141,59 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
       compoundV3.getDepositBalanceV3(ALICE, WETH_Arbitrum, cUSDCV3_Arbitrum), AMOUNT_SUPPLY_WETH
     );
   }
+
+  function test_handleOutboundWithBorrowFromV3ToV3() public {
+    deal(WETH_Arbitrum, ALICE, AMOUNT_SUPPLY_WETH);
+    assertEq(IERC20(WETH_Arbitrum).balanceOf(ALICE), AMOUNT_SUPPLY_WETH);
+    deal(USDC_Arbitrum, ALICE, AMOUNT_BORROW_USDC * 10);
+    assertEq(IERC20(USDC_Arbitrum).balanceOf(ALICE), AMOUNT_BORROW_USDC * 10);
+
+    //Deposit 100 WETH into CompoundV3 on mainnet
+    vm.startPrank(ALICE);
+    IERC20(WETH_Arbitrum).approve(address(cUSDCV3_Arbitrum), AMOUNT_SUPPLY_WETH);
+    _utils_depositV3(AMOUNT_SUPPLY_WETH, WETH_Arbitrum, cUSDCV3_Arbitrum);
+    assertApproxEqAbs(
+      compoundV3.getDepositBalanceV3(ALICE, WETH_Arbitrum, cUSDCV3_Arbitrum),
+      AMOUNT_SUPPLY_WETH,
+      AMOUNT_SUPPLY_WETH / 10
+    );
+    _utils_borrowV3(AMOUNT_BORROW_USDC, USDC_Arbitrum, cUSDCV3_Arbitrum);
+    assertApproxEqAbs(
+      compoundV3.getBorrowBalanceV3(ALICE, USDC_Arbitrum, cUSDCV3_Arbitrum),
+      AMOUNT_BORROW_USDC,
+      AMOUNT_BORROW_USDC / 10
+    );
+
+    for(uint i = 0; i < 10; i++) {
+      vm.warp(block.timestamp + 13 seconds);
+      vm.roll(block.number + 1);
+    }
+
+    //Migrate 100 WETH_Arbitrum deposit position from CompoundV3 on arbitrum to CompoundV3 on other chain
+    IHimalayaMigrator.Migration memory migration;
+    migration.owner = ALICE;
+    migration.fromMarket = cUSDCV3_Arbitrum;
+    migration.toMarket = cUSDCV3_Polygon;
+    migration.assetOrigin = IERC20(WETH_Arbitrum);
+    migration.assetDest = IERC20(WETH_Polygon);
+    migration.amount = AMOUNT_SUPPLY_WETH;
+    migration.fromDebtMarket = cUSDCV3_Arbitrum;
+    migration.debtAssetOrigin = IERC20(USDC_Arbitrum);
+    migration.debtAssetDest = IERC20(USDC_Polygon);
+    migration.debtAmount = AMOUNT_BORROW_USDC;
+    migration.toChain = 137; //Polygon
+    migration.himalaya = address(himalayaConnext_Polygon);
+
+    //approve himalayaCompound as operator on V3 originChain
+    ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);
+    //approve market to pull debtAsset to payback debt
+    //debt may have grown due to interest
+    IERC20(USDC_Arbitrum).approve(address(cUSDCV3_Arbitrum), AMOUNT_BORROW_USDC * 10);
+
+    himalayaCompound.beginXMigration(migration);
+    assertEq(IERC20(WETH_Arbitrum).balanceOf(address(himalayaCompound)), 0);
+    assertEq(compoundV3.getDepositBalanceV3(ALICE, WETH_Arbitrum, cUSDCV3_Arbitrum), 0);
+    assertEq(IERC20(USDC_Arbitrum).balanceOf(address(himalayaCompound)), 0);
+    assertEq(compoundV3.getBorrowBalanceV3(ALICE, USDC_Arbitrum, cUSDCV3_Arbitrum), 0);
+  }
 }
