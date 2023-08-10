@@ -141,4 +141,59 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
       compoundV3.getDepositBalanceV3(ALICE, WETH_Polygon, cUSDCV3_Polygon), AMOUNT_SUPPLY_WETH
     );
   }
+
+  function test_handleOutboundWithBorrowFromV3ToV3() public {
+    deal(WETH_Polygon, ALICE, AMOUNT_SUPPLY_WETH);
+    assertEq(IERC20(WETH_Polygon).balanceOf(ALICE), AMOUNT_SUPPLY_WETH);
+    deal(USDC_Polygon, ALICE, AMOUNT_BORROW_USDC * 10);
+    assertEq(IERC20(USDC_Polygon).balanceOf(ALICE), AMOUNT_BORROW_USDC * 10);
+
+    //Deposit 100 WETH into CompoundV3 on mainnet
+    vm.startPrank(ALICE);
+    IERC20(WETH_Polygon).approve(address(cUSDCV3_Polygon), AMOUNT_SUPPLY_WETH);
+    _utils_depositV3(AMOUNT_SUPPLY_WETH, WETH_Polygon, cUSDCV3_Polygon);
+    assertApproxEqAbs(
+      compoundV3.getDepositBalanceV3(ALICE, WETH_Polygon, cUSDCV3_Polygon),
+      AMOUNT_SUPPLY_WETH,
+      AMOUNT_SUPPLY_WETH / 10
+    );
+    _utils_borrowV3(AMOUNT_BORROW_USDC, USDC_Polygon, cUSDCV3_Polygon);
+    assertApproxEqAbs(
+      compoundV3.getBorrowBalanceV3(ALICE, USDC_Polygon, cUSDCV3_Polygon),
+      AMOUNT_BORROW_USDC,
+      AMOUNT_BORROW_USDC / 10
+    );
+
+    for(uint i = 0; i < 10; i++) {
+      vm.warp(block.timestamp + 13 seconds);
+      vm.roll(block.number + 1);
+    }
+
+    //Migrate 100 WETH_Polygon deposit position from CompoundV3 on polygon to CompoundV3 on other chain
+    IHimalayaMigrator.Migration memory migration;
+    migration.owner = ALICE;
+    migration.fromMarket = cUSDCV3_Polygon;
+    migration.toMarket = cUSDCV3_Arbitrum;
+    migration.assetOrigin = IERC20(WETH_Polygon);
+    migration.assetDest = IERC20(WETH_Arbitrum);
+    migration.amount = AMOUNT_SUPPLY_WETH;
+    migration.fromDebtMarket = cUSDCV3_Polygon;
+    migration.debtAssetOrigin = IERC20(USDC_Polygon);
+    migration.debtAssetDest = IERC20(USDC_Arbitrum);
+    migration.debtAmount = AMOUNT_BORROW_USDC;
+    migration.toChain = 42161; //Arbitrum
+    migration.himalaya = address(himalayaConnext_Polygon);
+
+    //approve himalayaCompound as operator on V3 originChain
+    ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);
+    //approve market to pull debtAsset to payback debt
+    //debt may have grown due to interest
+    IERC20(USDC_Polygon).approve(address(cUSDCV3_Polygon), AMOUNT_BORROW_USDC * 10);
+
+    himalayaCompound.beginXMigration(migration);
+    assertEq(IERC20(WETH_Polygon).balanceOf(address(himalayaCompound)), 0);
+    assertEq(compoundV3.getDepositBalanceV3(ALICE, WETH_Polygon, cUSDCV3_Polygon), 0);
+    assertEq(IERC20(USDC_Polygon).balanceOf(address(himalayaCompound)), 0);
+    assertEq(compoundV3.getBorrowBalanceV3(ALICE, USDC_Polygon, cUSDCV3_Polygon), 0);
+  }
 }
