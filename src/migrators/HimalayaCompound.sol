@@ -138,7 +138,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
       migration.amount = getDepositBalanceV2(migration.owner, migration.fromMarket);
     }
     if (migration.debtAmount != 0) {
-      if (migration.debtAmount > getBorrowBalanceV2(migration.owner, migration.fromDebtMarket)) {
+      if (migration.debtAmount != getBorrowBalanceV2(migration.owner, migration.fromDebtMarket)) {
         migration.debtAmount = getBorrowBalanceV2(migration.owner, migration.fromDebtMarket);
       }
       //Pull debtAsset from user
@@ -169,7 +169,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
       revert HimalayaCompound__handleOutboundFromV3_invalidAmount();
     }
     if(migration.debtAmount !=0){
-      if(migration.debtAmount > getBorrowBalanceV3(migration.owner, address(migration.debtAssetOrigin), migration.fromDebtMarket)){
+      if(migration.debtAmount != getBorrowBalanceV3(migration.owner, address(migration.debtAssetOrigin), migration.fromDebtMarket)){
         migration.debtAmount = getBorrowBalanceV3(migration.owner, address(migration.debtAssetOrigin), migration.fromDebtMarket);
       }
       paybackV3(migration.owner, migration.debtAmount, address(migration.debtAssetOrigin), migration.fromDebtMarket);
@@ -177,7 +177,6 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     if(migration.amount > getDepositBalanceV3(migration.owner, address(migration.assetOrigin), migration.fromMarket)){
       migration.amount = getDepositBalanceV3(migration.owner, address(migration.assetOrigin), migration.fromMarket);
     }
-
     //Withdraw funds from V3
     withdrawV3(migration.owner, address(this), migration.amount, address(migration.assetOrigin), migration.fromMarket);
 
