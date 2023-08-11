@@ -261,6 +261,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
 
     assertEq(IERC20(USDC).balanceOf(ALICE), AMOUNT_BORROW_USDC);
     assertEq(compoundV3.getDepositBalanceV3(ALICE, WETH, cUSDCV3), AMOUNT_SUPPLY_WETH);
+    assertEq(compoundV3.getBorrowBalanceV3(ALICE, USDC, cUSDCV3), AMOUNT_BORROW_USDC);
   }
 
   function test_handleInboundToV3WithHimalayaConnext() public {
@@ -293,5 +294,6 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
 
     assertEq(IERC20(USDC).balanceOf(ALICE), AMOUNT_BORROW_USDC);
     assertEq(compoundV3.getDepositBalanceV3(ALICE, WETH, cUSDCV3), AMOUNT_SUPPLY_WETH);
+    assertEq(compoundV3.getBorrowBalanceV3(ALICE, USDC, cUSDCV3), AMOUNT_BORROW_USDC);
   }
 }

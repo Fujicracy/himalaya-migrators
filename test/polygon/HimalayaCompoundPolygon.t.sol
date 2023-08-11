@@ -140,6 +140,7 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
     assertEq(
       compoundV3.getDepositBalanceV3(ALICE, WETH_Polygon, cUSDCV3_Polygon), AMOUNT_SUPPLY_WETH
     );
+    assertEq(compoundV3.getBorrowBalanceV3(ALICE, USDC_Polygon, cUSDCV3_Polygon), AMOUNT_BORROW_USDC);
   }
 
   function test_handleOutboundWithBorrowFromV3ToV3() public {

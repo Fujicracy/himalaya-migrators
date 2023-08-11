@@ -140,6 +140,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
     assertEq(
       compoundV3.getDepositBalanceV3(ALICE, WETH_Arbitrum, cUSDCV3_Arbitrum), AMOUNT_SUPPLY_WETH
     );
+    assertEq(compoundV3.getBorrowBalanceV3(ALICE, USDC_Arbitrum, cUSDCV3_Arbitrum), AMOUNT_BORROW_USDC);
   }
 
   function test_handleOutboundWithBorrowFromV3ToV3() public {
