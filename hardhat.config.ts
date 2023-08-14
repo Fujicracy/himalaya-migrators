@@ -38,6 +38,8 @@ const config: HardhatUserConfig = {
       live: false,
       saveDeployments: true,
       deploy: [`deploy/networks/${getTestDeployNetwork()}`],
+      gas: 21000000,
+      gasPrice: 80000000000,
     },
     hardhat: {
       live: false,
