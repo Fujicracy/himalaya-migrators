@@ -178,7 +178,7 @@ contract HimalayaCompoundUtils is Test {
   }
 
   function _utils_borrowV3(uint256 amount, address asset, address market) public {
-      ICompoundV3(market).withdraw(asset, amount);
+    ICompoundV3(market).withdraw(asset, amount);
   }
 
   function _enterCollatMarketV2_mainnet(address asset) private {
