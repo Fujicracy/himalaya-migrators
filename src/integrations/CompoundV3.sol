@@ -16,6 +16,9 @@ contract CompoundV3 {
   /// @dev Custom errors
   error CompoundV3__wrongMarket();
 
+  /// @dev events
+  event BorrowFailed(address toMarket, address debtAsset, uint256 debtAmount);
+
   function depositV3(
     address user,
     uint256 amount,
@@ -38,8 +41,11 @@ contract CompoundV3 {
     internal
     returns (bool success)
   {
-    // From Comet docs: "The base asset can be borrowed using the withdraw function"
-    ICompoundV3(cMarketV3).withdrawFrom(user, user, debtAsset, amount);
+    try ICompoundV3(cMarketV3)
+      // From Comet docs: "The base asset can be borrowed using the withdraw function"
+      .withdrawFrom(user, user, debtAsset, amount) {} catch {
+      emit BorrowFailed(cMarketV3, address(debtAsset), amount);
+    }
     success = true;
   }
 
