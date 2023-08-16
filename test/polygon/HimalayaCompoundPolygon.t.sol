@@ -140,7 +140,9 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
     assertEq(
       compoundV3.getDepositBalanceV3(ALICE, WETH_Polygon, cUSDCV3_Polygon), AMOUNT_SUPPLY_WETH
     );
-    assertEq(compoundV3.getBorrowBalanceV3(ALICE, USDC_Polygon, cUSDCV3_Polygon), AMOUNT_BORROW_USDC);
+    assertEq(
+      compoundV3.getBorrowBalanceV3(ALICE, USDC_Polygon, cUSDCV3_Polygon), AMOUNT_BORROW_USDC
+    );
   }
 
   function test_handleOutboundWithBorrowFromV3ToV3() public {
@@ -165,7 +167,7 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
       AMOUNT_BORROW_USDC / 10
     );
 
-    for(uint i = 0; i < 10; i++) {
+    for (uint256 i = 0; i < 10; i++) {
       vm.warp(block.timestamp + 13 seconds);
       vm.roll(block.number + 1);
     }
@@ -177,11 +179,11 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
     migration.toMarket = cUSDCV3_Arbitrum;
     migration.assetOrigin = IERC20(WETH_Polygon);
     migration.assetDest = IERC20(WETH_Arbitrum);
-    migration.amount = AMOUNT_SUPPLY_WETH;
+    migration.amount = compoundV3.getDepositBalanceV3(ALICE, WETH_Polygon, cUSDCV3_Polygon);
     migration.fromDebtMarket = cUSDCV3_Polygon;
     migration.debtAssetOrigin = IERC20(USDC_Polygon);
     migration.debtAssetDest = IERC20(USDC_Arbitrum);
-    migration.debtAmount = AMOUNT_BORROW_USDC;
+    migration.debtAmount = compoundV3.getBorrowBalanceV3(ALICE, USDC_Polygon, cUSDCV3_Polygon);
     migration.toChain = 42161; //Arbitrum
     migration.himalaya = address(himalayaConnext_Polygon);
 

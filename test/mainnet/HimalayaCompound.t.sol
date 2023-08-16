@@ -66,7 +66,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     migration.toMarket = cUSDCV3_Polygon;
     migration.assetOrigin = IERC20(WETH);
     migration.assetDest = IERC20(WETH_Polygon);
-    migration.amount = AMOUNT_SUPPLY_WETH;
+    migration.amount = compoundV2.getDepositBalanceV2(ALICE, address(cETHV2));
     migration.debtAssetOrigin = IERC20(address(0));
     migration.debtAssetDest = IERC20(address(0));
     migration.debtAmount = 0;
@@ -118,7 +118,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     migration.toMarket = cUSDCV3_Polygon;
     migration.assetOrigin = IERC20(WETH);
     migration.assetDest = IERC20(WETH_Polygon);
-    migration.amount = AMOUNT_SUPPLY_WETH;
+    migration.amount = compoundV2.getDepositBalanceV2(ALICE, address(cETHV2));
     migration.fromDebtMarket = address(cUSDCV2);
     migration.debtAssetOrigin = IERC20(USDC);
     migration.debtAssetDest = IERC20(address(USDC_Polygon));
@@ -161,7 +161,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     migration.toMarket = cUSDCV3_Polygon;
     migration.assetOrigin = IERC20(WETH);
     migration.assetDest = IERC20(WETH_Polygon);
-    migration.amount = AMOUNT_SUPPLY_WETH;
+    migration.amount = compoundV3.getDepositBalanceV3(ALICE, WETH, cUSDCV3);
     migration.debtAssetOrigin = IERC20(USDC);
     migration.debtAssetDest = IERC20(USDC_Polygon);
     migration.debtAmount = 0;
@@ -198,7 +198,7 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
       AMOUNT_BORROW_USDC / 10
     );
 
-    for(uint i = 0; i < 10; i++) {
+    for (uint256 i = 0; i < 10; i++) {
       vm.warp(block.timestamp + 13 seconds);
       vm.roll(block.number + 1);
     }
@@ -210,11 +210,11 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     migration.toMarket = cUSDCV3_Polygon;
     migration.assetOrigin = IERC20(WETH);
     migration.assetDest = IERC20(WETH_Polygon);
-    migration.amount = AMOUNT_SUPPLY_WETH;
+    migration.amount = compoundV3.getDepositBalanceV3(ALICE, WETH, cUSDCV3);
     migration.fromDebtMarket = cUSDCV3;
     migration.debtAssetOrigin = IERC20(USDC);
     migration.debtAssetDest = IERC20(USDC_Polygon);
-    migration.debtAmount = AMOUNT_BORROW_USDC;
+    migration.debtAmount = compoundV3.getBorrowBalanceV3(ALICE, USDC, cUSDCV3);
     migration.toChain = 137; //Polygon
     migration.himalaya = address(himalayaConnext_Polygon);
 
