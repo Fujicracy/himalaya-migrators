@@ -296,4 +296,36 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     assertEq(compoundV3.getDepositBalanceV3(ALICE, WETH, cUSDCV3), AMOUNT_SUPPLY_WETH);
     assertEq(compoundV3.getBorrowBalanceV3(ALICE, USDC, cUSDCV3), AMOUNT_BORROW_USDC);
   }
+
+  function test_handleInboundToV3WithHimalayaConnextWithInvalidAmount() public {
+    //Migration from 0 WETH deposit position from other chain to CompoundV3 on mainnet
+    IHimalayaMigrator.Migration memory migration;
+    migration.owner = ALICE;
+    migration.fromMarket = cUSDCV3_Polygon;
+    migration.toMarket = cUSDCV3;
+    migration.assetOrigin = IERC20(WETH_Polygon);
+    migration.assetDest = IERC20(WETH);
+    migration.amount = 0;
+    migration.debtAssetOrigin = IERC20(USDC_Polygon);
+    migration.debtAssetDest = IERC20(USDC);
+    migration.debtAmount = AMOUNT_BORROW_USDC;
+    migration.toChain = 1; //Mainnet
+    migration.himalaya = address(himalayaCompound);
+
+    //approve himalayaCompound as operator on V3
+    vm.startPrank(ALICE);
+    ICompoundV3(migration.toMarket).allow(address(himalayaCompound), true);
+    vm.stopPrank();
+
+    bytes memory data = abi.encode(migration);
+    vm.expectEmit(true, true, true, true);
+    emit BorrowFailed(migration.toMarket, address(migration.debtAssetDest), migration.debtAmount);
+    himalayaConnext.xReceive(
+      0, migration.amount, address(migration.assetDest), migration.owner, MAINNET_DOMAIN, data
+    );
+
+    assertEq(IERC20(USDC).balanceOf(ALICE), 0);
+    assertEq(compoundV3.getDepositBalanceV3(ALICE, WETH, cUSDCV3), 0);
+    assertEq(compoundV3.getBorrowBalanceV3(ALICE, USDC, cUSDCV3), 0);
+  }
 }

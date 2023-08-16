@@ -16,6 +16,8 @@ import {HimalayaCompound} from "../src/migrators/HimalayaCompound.sol";
 import {ICompoundV3} from "@fuji-v2/src/interfaces/compoundV3/ICompoundV3.sol";
 
 contract HimalayaCompoundUtils is Test {
+  event BorrowFailed(address toMarket, address debtAsset, uint256 debtAmount);
+
   //Compound Integrations
   CompoundV2 public compoundV2; //only on mainnet
   CompoundV3 public compoundV3;
