@@ -210,4 +210,35 @@ contract HimalayaCompoundUtils is Test {
     ICompoundV3(cMarketV3).supply(asset, amount);
     success = true;
   }
+
+  function _utils_positionIsHealthy(
+    address market,
+    address asset,
+    address debtAsset,
+    uint256 amount,
+    uint256 debtAmount
+  )
+    public
+    returns (bool)
+  {
+    uint256 minAmount = ICompoundV3(market).baseBorrowMin();
+    if (debtAmount < minAmount) {
+      return false;
+    }
+    uint256 RANDOM_USER_PK = 0xA17461917319;
+    address RANDOM_USER = vm.addr(RANDOM_USER_PK);
+
+    deal(asset, RANDOM_USER, amount);
+
+    vm.startPrank(RANDOM_USER);
+    IERC20(asset).approve(market, amount);
+    _utils_depositV3(amount, asset, market);
+
+    vm.prank(RANDOM_USER);
+    try ICompoundV3(market).withdraw(debtAsset, debtAmount) {
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }

@@ -231,6 +231,97 @@ contract HimalayaCompoundUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils
     assertEq(compoundV3.getBorrowBalanceV3(ALICE, USDC, cUSDCV3), 0);
   }
 
+  function test_handleOutboundWithBorrowFromV3ToV3WithArbitraryAmounts(
+    uint256 collateralAmount,
+    uint256 debtAmount
+  )
+    public
+  {
+    vm.assume(collateralAmount > 1e14);
+    deal(WETH, ALICE, AMOUNT_SUPPLY_WETH);
+    assertEq(IERC20(WETH).balanceOf(ALICE), AMOUNT_SUPPLY_WETH);
+
+    vm.startPrank(ALICE);
+    IERC20(WETH).approve(address(cUSDCV3), AMOUNT_SUPPLY_WETH);
+    _utils_depositV3(AMOUNT_SUPPLY_WETH, WETH, cUSDCV3);
+    assertApproxEqAbs(
+      compoundV3.getDepositBalanceV3(ALICE, WETH, cUSDCV3),
+      AMOUNT_SUPPLY_WETH,
+      AMOUNT_SUPPLY_WETH / 10
+    );
+    _utils_borrowV3(AMOUNT_BORROW_USDC, USDC, cUSDCV3);
+    assertApproxEqAbs(
+      compoundV3.getBorrowBalanceV3(ALICE, USDC, cUSDCV3),
+      AMOUNT_BORROW_USDC,
+      AMOUNT_BORROW_USDC / 10
+    );
+
+    for (uint256 i = 0; i < 10; i++) {
+      vm.warp(block.timestamp + 13 seconds);
+      vm.roll(block.number + 1);
+    }
+
+    IHimalayaMigrator.Migration memory migration;
+    migration.owner = ALICE;
+    migration.fromMarket = cUSDCV3;
+    migration.toMarket = cUSDCV3_Polygon;
+    migration.assetOrigin = IERC20(WETH);
+    migration.assetDest = IERC20(WETH_Polygon);
+    migration.amount = collateralAmount;
+    migration.fromDebtMarket = cUSDCV3;
+    migration.debtAssetOrigin = IERC20(USDC);
+    migration.debtAssetDest = IERC20(USDC_Polygon);
+    migration.debtAmount = debtAmount;
+    migration.toChain = 137; //Polygon
+    migration.himalaya = address(himalayaConnext_Polygon);
+
+    //approve himalayaCompound as operator on V3 originChain
+    ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);
+    IERC20(USDC).approve(address(cUSDCV3), debtAmount);
+
+    vm.stopPrank();
+
+    uint256 userDepositAmount = compoundV3.getDepositBalanceV3(ALICE, WETH, cUSDCV3);
+    uint256 userDebtAmount = compoundV3.getBorrowBalanceV3(ALICE, USDC, cUSDCV3);
+    //case 1: user tries to withdraw/payback more than they have/owe
+    if (collateralAmount > userDepositAmount || debtAmount > userDebtAmount) {
+      vm.expectRevert(
+        HimalayaCompound.HimalayaCompound__handleOutboundFromV3_invalidAmount.selector
+      );
+      vm.prank(ALICE);
+      himalayaCompound.beginXMigration(migration);
+    }
+    //case 2: no amounts to migrate
+    else if (collateralAmount == 0 && debtAmount == 0) {
+      vm.expectRevert(
+        HimalayaCompound.HimalayaCompound__handleOutboundFromV3_invalidAmount.selector
+      );
+      vm.prank(ALICE);
+      himalayaCompound.beginXMigration(migration);
+    }
+    //case 3: user tries to make his position unhealthy
+    else if (
+      !_utils_positionIsHealthy(
+        cUSDCV3, WETH, USDC, userDepositAmount - collateralAmount, userDebtAmount - debtAmount
+      )
+    ) {
+      vm.expectRevert();
+      vm.prank(ALICE);
+      himalayaCompound.beginXMigration(migration);
+    } else {
+      vm.prank(ALICE);
+      himalayaCompound.beginXMigration(migration);
+      assertEq(IERC20(WETH).balanceOf(address(himalayaCompound)), 0);
+      assertEq(
+        compoundV3.getDepositBalanceV3(ALICE, WETH, cUSDCV3), userDepositAmount - collateralAmount
+      );
+      assertEq(IERC20(USDC).balanceOf(address(himalayaCompound)), 0);
+      assertApproxEqAbs(
+        compoundV3.getBorrowBalanceV3(ALICE, USDC, cUSDCV3), userDebtAmount - debtAmount, 1
+      );
+    }
+  }
+
   function test_handleInboundToV3() public {
     //Migration from 100 WETH deposit position from CompoundV2 on other chain to CompoundV3 on mainnet
     IHimalayaMigrator.Migration memory migration;
