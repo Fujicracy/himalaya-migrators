@@ -65,6 +65,7 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
     migration.debtAmount = 0;
     migration.toChain = 42161; //Arbitrum
     migration.himalaya = address(himalayaConnext_Polygon);
+    migration.slippage = 50;
 
     //approve himalayaCompound as operator on V3 originChain
     ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);
@@ -88,6 +89,7 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
     migration.debtAmount = AMOUNT_BORROW_USDC;
     migration.toChain = 137; //Polygon
     migration.himalaya = address(himalayaCompound);
+    migration.slippage = 50;
 
     //approve himalayaCompound as operator on V3
     vm.startPrank(ALICE);
@@ -122,6 +124,7 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
     migration.debtAmount = AMOUNT_BORROW_USDC;
     migration.toChain = 137; //Polygon
     migration.himalaya = address(himalayaCompound);
+    migration.slippage = 50;
 
     //approve himalayaCompound as operator on V3
     vm.startPrank(ALICE);
@@ -159,6 +162,7 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
     migration.debtAmount = AMOUNT_BORROW_USDC;
     migration.toChain = 137; //Polygon
     migration.himalaya = address(himalayaCompound);
+    migration.slippage = 50;
 
     //approve himalayaCompound as operator on V3
     vm.startPrank(ALICE);
@@ -220,6 +224,7 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
     migration.debtAmount = debtAmount;
     migration.toChain = 42161; //Arbitrum
     migration.himalaya = address(himalayaConnext_Arbitrum);
+    migration.slippage = 50;
 
     //approve himalayaCompound as operator on V3 originChain
     ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);
@@ -316,6 +321,7 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
     migration.debtAmount = compoundV3.getBorrowBalanceV3(ALICE, USDC_Polygon, cUSDCV3_Polygon);
     migration.toChain = 42161; //Arbitrum
     migration.himalaya = address(himalayaConnext_Polygon);
+    migration.slippage = 50;
 
     //approve himalayaCompound as operator on V3 originChain
     ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);

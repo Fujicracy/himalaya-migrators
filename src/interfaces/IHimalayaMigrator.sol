@@ -26,6 +26,7 @@ interface IHimalayaMigrator {
     uint256 debtAmount; // amount of debt being migrated
     address himalaya; //address of IHimalayaMigrator on destination chain
     uint256 deadline; //period to execute this migration
+    uint256 slippage; //slippage tolerance in BPS
   }
 
   function beginXMigration(Migration memory migration) external returns (bytes32 transferId);

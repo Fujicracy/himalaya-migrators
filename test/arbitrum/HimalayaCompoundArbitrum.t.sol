@@ -65,6 +65,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
     migration.debtAmount = 0;
     migration.toChain = 137; //Polygon
     migration.himalaya = address(himalayaConnext_Polygon);
+    migration.slippage = 30;
 
     //approve himalayaCompound as operator on V3 originChain
     ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);
@@ -88,6 +89,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
     migration.debtAmount = AMOUNT_BORROW_USDC;
     migration.toChain = 42161; //Arbitrum
     migration.himalaya = address(himalayaCompound);
+    migration.slippage = 30;
 
     //approve himalayaCompound as operator on V3
     vm.startPrank(ALICE);
@@ -122,6 +124,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
     migration.debtAmount = AMOUNT_BORROW_USDC;
     migration.toChain = 42161; //Arbitrum
     migration.himalaya = address(himalayaCompound);
+    migration.slippage = 30;
 
     //approve himalayaCompound as operator on V3
     vm.startPrank(ALICE);
@@ -159,6 +162,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
     migration.debtAmount = AMOUNT_BORROW_USDC;
     migration.toChain = 42161; //Arbitrum
     migration.himalaya = address(himalayaCompound);
+    migration.slippage = 30;
 
     //approve himalayaCompound as operator on V3
     vm.startPrank(ALICE);
@@ -183,7 +187,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
   )
     public
   {
-    vm.assume(collateralAmount > 1e16);
+    vm.assume(collateralAmount > 1e14);
     deal(WETH_Arbitrum, ALICE, AMOUNT_SUPPLY_WETH);
     assertEq(IERC20(WETH_Arbitrum).balanceOf(ALICE), AMOUNT_SUPPLY_WETH);
 
@@ -220,6 +224,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
     migration.debtAmount = debtAmount;
     migration.toChain = 137; //Polygon
     migration.himalaya = address(himalayaConnext_Polygon);
+    migration.slippage = 30;
 
     //approve himalayaCompound as operator on V3 originChain
     ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);
@@ -320,6 +325,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
     migration.debtAmount = compoundV3.getBorrowBalanceV3(ALICE, USDC_Arbitrum, cUSDCV3_Arbitrum);
     migration.toChain = 137; //Polygon
     migration.himalaya = address(himalayaConnext_Polygon);
+    migration.slippage = 30;
 
     //approve himalayaCompound as operator on V3 originChain
     ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);
