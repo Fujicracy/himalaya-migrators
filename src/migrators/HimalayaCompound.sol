@@ -123,7 +123,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
 
   function _handleOutboundFromV2(Migration memory migration) internal returns (bool) {
     if (
-      (migration.amount == 0 && migration.debtAmount == 0)
+      (migration.amount == 0)
         || migration.amount > getDepositBalanceV2(migration.owner, migration.fromMarket)
     ) {
       revert HimalayaCompound__handleOutboundFromV2_invalidAmount();
@@ -164,7 +164,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
 
   function _handleOutboundFromV3(Migration memory migration) internal returns (bool) {
     if (
-      (migration.amount == 0 && migration.debtAmount == 0)
+      (migration.amount == 0)
         || migration.amount
           > getDepositBalanceV3(migration.owner, address(migration.assetOrigin), migration.fromMarket)
     ) {
