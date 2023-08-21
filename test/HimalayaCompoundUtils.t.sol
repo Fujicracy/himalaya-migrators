@@ -234,10 +234,11 @@ contract HimalayaCompoundUtils is Test {
     IERC20(asset).approve(market, amount);
     _utils_depositV3(amount, asset, market);
 
-    vm.prank(RANDOM_USER);
     try ICompoundV3(market).withdraw(debtAsset, debtAmount) {
+      vm.stopPrank();
       return true;
     } catch {
+      vm.stopPrank();
       return false;
     }
   }
