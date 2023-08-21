@@ -27,6 +27,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   error HimalayaCompound__addMarketsDestChain_invalidInput();
   error HimalayaCompound__onlyAdmin_notAuthorized();
   error HimalayaCompound__handleOutboundFromV2_invalidDebtAmount();
+  error HimalayaCompound__beginXMigration_invalidAmount();
 
   //marketAddress => isMarket
   mapping(address => bool) public isMarketV2;
@@ -55,7 +56,9 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     if (!isMarketOnDestChain[migration.toChain][migration.toMarket]) {
       revert HimalayaCompound__beginXMigration_marketNotSupported();
     }
-
+    if (migration.amount == 0) {
+      revert HimalayaCompound__beginXMigration_invalidAmount();
+    }
     //Identify market
     if (isMarketV2[migration.fromMarket]) {
       _handleOutboundFromV2(migration);
@@ -122,10 +125,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   }
 
   function _handleOutboundFromV2(Migration memory migration) internal returns (bool) {
-    if (
-      (migration.amount == 0)
-        || migration.amount > getDepositBalanceV2(migration.owner, migration.fromMarket)
-    ) {
+    if (migration.amount > getDepositBalanceV2(migration.owner, migration.fromMarket)) {
       revert HimalayaCompound__handleOutboundFromV2_invalidAmount();
     }
     if (migration.debtAmount != 0) {
@@ -164,9 +164,8 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
 
   function _handleOutboundFromV3(Migration memory migration) internal returns (bool) {
     if (
-      (migration.amount == 0)
-        || migration.amount
-          > getDepositBalanceV3(migration.owner, address(migration.assetOrigin), migration.fromMarket)
+      migration.amount
+        > getDepositBalanceV3(migration.owner, address(migration.assetOrigin), migration.fromMarket)
     ) {
       revert HimalayaCompound__handleOutboundFromV3_invalidAmount();
     }
