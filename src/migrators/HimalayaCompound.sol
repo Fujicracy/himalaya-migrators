@@ -28,6 +28,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   error HimalayaCompound__setMarketsV2_invalidInput();
   error HimalayaCompound__setMarketsV3_invalidInput();
   error HimalayaCompound__onlyAdmin_notAuthorized();
+  error HimalayaCompound__onlyHimalayaConnext_notAuthorized();
 
   //marketAddress => isMarket
   mapping(address => bool) public isMarketV2;
@@ -43,6 +44,13 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   modifier onlyAdmin() {
     if (msg.sender != admin) {
       revert HimalayaCompound__onlyAdmin_notAuthorized();
+    }
+    _;
+  }
+
+  modifier onlyHimalayaConnext() {
+    if (msg.sender != address(himalayaConnext)) {
+      revert HimalayaCompound__onlyHimalayaConnext_notAuthorized();
     }
     _;
   }
@@ -76,7 +84,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     transferId = himalayaConnext.xCall(migration);
   }
 
-  function receiveXMigration(bytes memory data) external returns (bool) {
+  function receiveXMigration(bytes memory data) external onlyHimalayaConnext returns (bool) {
     Migration memory migration = abi.decode(data, (Migration));
     //TODO check parameters
 

@@ -75,7 +75,7 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
     assertEq(compoundV3.getDepositBalanceV3(ALICE, WETH_Polygon, cUSDCV3_Polygon), 0);
   }
 
-  function test_handleInboundToV3() public {
+  function test_tryHandleInboundToV3WithoutHimalayaConnext() public {
     //Migration from 100 WETH deposit position from CompoundV2 on other chain to CompoundV3 on polygon
     IHimalayaMigrator.Migration memory migration;
     migration.owner = ALICE;
@@ -101,12 +101,8 @@ contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils
     IERC20(WETH_Polygon).approve(address(himalayaCompound), AMOUNT_SUPPLY_WETH);
 
     bytes memory data = abi.encode(migration);
+    vm.expectRevert(HimalayaCompound.HimalayaCompound__onlyHimalayaConnext_notAuthorized.selector);
     himalayaCompound.receiveXMigration(data);
-
-    assertEq(IERC20(USDC_Polygon).balanceOf(ALICE), AMOUNT_BORROW_USDC);
-    assertEq(
-      compoundV3.getDepositBalanceV3(ALICE, WETH_Polygon, cUSDCV3_Polygon), AMOUNT_SUPPLY_WETH
-    );
   }
 
   function test_handleInboundToV3WithHimalayaConnext() public {
