@@ -75,12 +75,21 @@ contract HimalayaCompoundUtils is Test {
     marketsV2[1] = address(cUSDCV2);
     marketsV2[2] = address(cUSDTV2);
 
+    bool[] memory isMarketActiveV2 = new bool[](3);
+    isMarketActiveV2[0] = true;
+    isMarketActiveV2[1] = true;
+    isMarketActiveV2[2] = true;
+
     address[] memory marketsV3 = new address[](2);
     marketsV3[0] = cWETHV3;
     marketsV3[1] = cUSDCV3;
 
-    hc.addMarketsV2(marketsV2);
-    hc.addMarketsV3(marketsV3);
+    bool[] memory isMarketActiveV3 = new bool[](2);
+    isMarketActiveV3[0] = true;
+    isMarketActiveV3[1] = true;
+
+    hc.setMarketsV2(marketsV2, isMarketActiveV2);
+    hc.setMarketsV3(marketsV3, isMarketActiveV3);
   }
 
   function addMarkets_polygon() internal {
@@ -89,7 +98,10 @@ contract HimalayaCompoundUtils is Test {
     address[] memory marketsV3 = new address[](1);
     marketsV3[0] = cUSDCV3_Polygon;
 
-    hc.addMarketsV3(marketsV3);
+    bool[] memory isMarketActiveV3 = new bool[](1);
+    isMarketActiveV3[0] = true;
+
+    hc.setMarketsV3(marketsV3, isMarketActiveV3);
   }
 
   function addMarkets_arbitrum() internal {
@@ -98,7 +110,10 @@ contract HimalayaCompoundUtils is Test {
     address[] memory marketsV3 = new address[](1);
     marketsV3[0] = cUSDCV3_Arbitrum;
 
-    hc.addMarketsV3(marketsV3);
+    bool[] memory isMarketActiveV3 = new bool[](1);
+    isMarketActiveV3[0] = true;
+
+    hc.setMarketsV3(marketsV3, isMarketActiveV3);
   }
 
   function addMarketsDestChain_mainnet() internal {
@@ -112,7 +127,11 @@ contract HimalayaCompoundUtils is Test {
     markets[0] = cUSDCV3_Polygon; //polygon cUSDCV3
     markets[1] = cUSDCV3_Arbitrum; //arbitrum cUSDCV3
 
-    hc.addMarketsDestChain(chainIds, markets);
+    bool[] memory isMarketActive = new bool[](2);
+    isMarketActive[0] = true;
+    isMarketActive[1] = true;
+
+    hc.setMarketsDestChain(chainIds, markets, isMarketActive);
   }
 
   function addMarketsDestChain_arbitrum() internal {
@@ -128,7 +147,12 @@ contract HimalayaCompoundUtils is Test {
     markets[1] = cUSDCV3; //mainnet cUSDCV3
     markets[2] = cWETHV3; //mainnet cWETHV3
 
-    hc.addMarketsDestChain(chainIds, markets);
+    bool[] memory isMarketActive = new bool[](3);
+    isMarketActive[0] = true;
+    isMarketActive[1] = true;
+    isMarketActive[2] = true;
+
+    hc.setMarketsDestChain(chainIds, markets, isMarketActive);
   }
 
   function addMarketsDestChain_polygon() internal {
@@ -144,7 +168,12 @@ contract HimalayaCompoundUtils is Test {
     markets[1] = cUSDCV3; //mainnet cUSDCV3
     markets[2] = cWETHV3; //mainnet cWETHV3
 
-    hc.addMarketsDestChain(chainIds, markets);
+    bool[] memory isMarketActive = new bool[](3);
+    isMarketActive[0] = true;
+    isMarketActive[1] = true;
+    isMarketActive[2] = true;
+
+    hc.setMarketsDestChain(chainIds, markets, isMarketActive);
   }
 
   function _utils_depositV2_mainnet(uint256 amount, address asset) internal {
