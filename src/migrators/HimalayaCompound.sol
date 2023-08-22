@@ -17,191 +17,266 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IHimalayaConnext} from "../interfaces/IHimalayaConnext.sol";
 
 contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
-  using SafeERC20 for IERC20;
+    using SafeERC20 for IERC20;
 
-  //@dev custom error
-  error HimalayaCompound__beginXMigration_marketNotSupported();
-  error HimalayaCompound__receiveXMigration_marketNotSupported();
-  error HimalayaCompound__handleOutboundFromV2_invalidAmount();
-  error HimalayaCompound__handleOutboundFromV3_invalidAmount();
-  error HimalayaCompound__setMarketsDestChain_invalidInput();
-  error HimalayaCompound__setMarketsV2_invalidInput();
-  error HimalayaCompound__setMarketsV3_invalidInput();
-  error HimalayaCompound__onlyAdmin_notAuthorized();
-  error HimalayaCompound__onlyHimalayaConnext_notAuthorized();
+    //@dev custom error
+    error HimalayaCompound__beginXMigration_marketNotSupported();
+    error HimalayaCompound__receiveXMigration_marketNotSupported();
+    error HimalayaCompound__handleOutboundFromV2_invalidAmount();
+    error HimalayaCompound__handleOutboundFromV3_invalidAmount();
+    error HimalayaCompound__setMarketsDestChain_invalidInput();
+    error HimalayaCompound__setMarketsV2_invalidInput();
+    error HimalayaCompound__setMarketsV3_invalidInput();
+    error HimalayaCompound__onlyAdmin_notAuthorized();
+    error HimalayaCompound__onlyHimalayaConnext_notAuthorized();
+    error HimalayaCompound__handleOutboundFromV2_invalidDebtAmount();
+    error HimalayaCompound__beginXMigration_invalidAmount();
 
-  //marketAddress => isMarket
-  mapping(address => bool) public isMarketV2;
-  mapping(address => bool) public isMarketV3;
+    //marketAddress => isMarket
+    mapping(address => bool) public isMarketV2;
+    mapping(address => bool) public isMarketV3;
 
-  //destChainId => marketOnDestChain => isMarketOnDestChain
-  mapping(uint48 => mapping(address => bool)) public isMarketOnDestChain;
+    //destChainId => marketOnDestChain => isMarketOnDestChain
+    mapping(uint48 => mapping(address => bool)) public isMarketOnDestChain;
 
-  IHimalayaConnext public immutable himalayaConnext;
+    IHimalayaConnext public immutable himalayaConnext;
 
-  address public immutable admin;
+    address public immutable admin;
 
-  modifier onlyAdmin() {
-    if (msg.sender != admin) {
-      revert HimalayaCompound__onlyAdmin_notAuthorized();
-    }
-    _;
-  }
-
-  modifier onlyHimalayaConnext() {
-    if (msg.sender != address(himalayaConnext)) {
-      revert HimalayaCompound__onlyHimalayaConnext_notAuthorized();
-    }
-    _;
-  }
-
-  constructor(address _himalayaConnext) {
-    himalayaConnext = IHimalayaConnext(_himalayaConnext);
-    admin = msg.sender;
-  }
-
-  function beginXMigration(Migration memory migration) external returns (bytes32 transferId) {
-    if (!isMarketOnDestChain[migration.toChain][migration.toMarket]) {
-      revert HimalayaCompound__beginXMigration_marketNotSupported();
+    modifier onlyAdmin() {
+        if (msg.sender != admin) {
+            revert HimalayaCompound__onlyAdmin_notAuthorized();
+        }
+        _;
     }
 
-    //Identify market
-    if (isMarketV2[migration.fromMarket]) {
-      _handleOutboundFromV2(
-        migration.owner, migration.fromMarket, migration.assetOrigin, migration.amount
-      );
-    } else if (isMarketV3[migration.fromMarket]) {
-      _handleOutboundFromV3(
-        migration.owner, migration.fromMarket, migration.assetOrigin, migration.amount
-      );
-    } else {
-      revert HimalayaCompound__beginXMigration_marketNotSupported();
+    modifier onlyHimalayaConnext() {
+        if (msg.sender != address(himalayaConnext)) {
+            revert HimalayaCompound__onlyHimalayaConnext_notAuthorized();
+        }
+        _;
     }
 
-    //Approve himalayaConnext to pull funds
-    migration.assetOrigin.safeIncreaseAllowance(address(himalayaConnext), migration.amount);
-
-    transferId = himalayaConnext.xCall(migration);
-  }
-
-  function receiveXMigration(bytes memory data) external onlyHimalayaConnext returns (bool) {
-    Migration memory migration = abi.decode(data, (Migration));
-    //TODO check parameters
-
-    if (!isMarketV3[migration.toMarket]) {
-      revert HimalayaCompound__receiveXMigration_marketNotSupported();
+    constructor(address _himalayaConnext) {
+        himalayaConnext = IHimalayaConnext(_himalayaConnext);
+        admin = msg.sender;
     }
 
-    //Pull funds from HimalayaConnext
-    SafeERC20.safeTransferFrom(migration.assetDest, msg.sender, address(this), migration.amount);
+    function beginXMigration(
+        Migration memory migration
+    ) external returns (bytes32 transferId) {
+        if (!isMarketOnDestChain[migration.toChain][migration.toMarket]) {
+            revert HimalayaCompound__beginXMigration_marketNotSupported();
+        }
+        if (migration.amount == 0) {
+            revert HimalayaCompound__beginXMigration_invalidAmount();
+        }
+        //Identify market
+        if (isMarketV2[migration.fromMarket]) {
+            _handleOutboundFromV2(migration);
+        } else if (isMarketV3[migration.fromMarket]) {
+            _handleOutboundFromV3(migration);
+        } else {
+            revert HimalayaCompound__beginXMigration_marketNotSupported();
+        }
 
-    _handleInboundToV3(
-      migration.owner,
-      migration.toMarket,
-      migration.assetDest,
-      migration.amount,
-      migration.debtAssetDest,
-      migration.debtAmount
-    );
+        //Approve himalayaConnext to pull funds
+        migration.assetOrigin.safeIncreaseAllowance(
+            address(himalayaConnext),
+            migration.amount
+        );
 
-    return true;
-  }
-
-  function setMarketsDestChain(
-    uint48[] memory chainIds,
-    address[] memory markets,
-    bool[] memory isMarketActive
-  )
-    external
-    onlyAdmin
-  {
-    if (chainIds.length != markets.length || chainIds.length != isMarketActive.length) {
-      revert HimalayaCompound__setMarketsDestChain_invalidInput();
+        transferId = himalayaConnext.xCall(migration);
     }
 
-    for (uint256 i = 0; i < chainIds.length; i++) {
-      isMarketOnDestChain[chainIds[i]][markets[i]] = isMarketActive[i];
-    }
-  }
+    function receiveXMigration(
+        bytes memory data
+    ) external onlyHimalayaConnext returns (bool) {
+        Migration memory migration = abi.decode(data, (Migration));
 
-  function setMarketsV2(address[] memory markets, bool[] memory isMarketActive) external onlyAdmin {
-    if (markets.length != isMarketActive.length) {
-      revert HimalayaCompound__setMarketsV2_invalidInput();
-    }
-    for (uint256 i = 0; i < markets.length; i++) {
-      isMarketV2[markets[i]] = isMarketActive[i];
-    }
-  }
+        if (!isMarketV3[migration.toMarket]) {
+            revert HimalayaCompound__receiveXMigration_marketNotSupported();
+        }
 
-  function setMarketsV3(address[] memory markets, bool[] memory isMarketActive) external onlyAdmin {
-    if (markets.length != isMarketActive.length) {
-      revert HimalayaCompound__setMarketsV3_invalidInput();
-    }
-    for (uint256 i = 0; i < markets.length; i++) {
-      isMarketV3[markets[i]] = isMarketActive[i];
-    }
-  }
+        //Pull funds from HimalayaConnext
+        SafeERC20.safeTransferFrom(
+            migration.assetDest,
+            msg.sender,
+            address(this),
+            migration.amount
+        );
 
-  function _handleOutboundFromV2(
-    address owner,
-    address fromMarket,
-    IERC20 asset,
-    uint256 amount
-  )
-    internal
-    returns (bool)
-  {
-    if (amount == 0 || amount > getDepositBalanceV2(owner, fromMarket)) {
-      revert HimalayaCompound__handleOutboundFromV2_invalidAmount();
+        _handleInboundToV3(
+            migration.owner,
+            migration.toMarket,
+            migration.assetDest,
+            migration.amount,
+            migration.debtAssetDest,
+            migration.debtAmount
+        );
+
+        return true;
     }
 
-    //Pull cTokens from user
-    uint256 cTokenBalance = IERC20(fromMarket).balanceOf(owner);
-    SafeERC20.safeTransferFrom(IERC20(fromMarket), owner, address(this), cTokenBalance);
+    function setMarketsDestChain(
+        uint48[] memory chainIds,
+        address[] memory markets,
+        bool[] memory isMarketActive
+    ) external onlyAdmin {
+        if (
+            chainIds.length != markets.length ||
+            chainIds.length != isMarketActive.length
+        ) {
+            revert HimalayaCompound__setMarketsDestChain_invalidInput();
+        }
 
-    //Withdraw funds from V2
-    withdrawV2(amount, address(asset), fromMarket);
-
-    return true;
-  }
-
-  function _handleOutboundFromV3(
-    address owner,
-    address fromMarket,
-    IERC20 asset,
-    uint256 amount
-  )
-    internal
-    returns (bool)
-  {
-    if (amount == 0 || amount > getDepositBalanceV3(owner, address(asset), fromMarket)) {
-      revert HimalayaCompound__handleOutboundFromV3_invalidAmount();
+        for (uint256 i = 0; i < chainIds.length; i++) {
+            isMarketOnDestChain[chainIds[i]][markets[i]] = isMarketActive[i];
+        }
     }
 
-    //TODO payback?
+    function setMarketsV2(
+        address[] memory markets,
+        bool[] memory isMarketActive
+    ) external onlyAdmin {
+        if (markets.length != isMarketActive.length) {
+            revert HimalayaCompound__setMarketsV2_invalidInput();
+        }
+        for (uint256 i = 0; i < markets.length; i++) {
+            isMarketV2[markets[i]] = isMarketActive[i];
+        }
+    }
 
-    //Withdraw funds from V3
-    withdrawV3(owner, address(this), amount, address(asset), fromMarket);
+    function setMarketsV3(
+        address[] memory markets,
+        bool[] memory isMarketActive
+    ) external onlyAdmin {
+        if (markets.length != isMarketActive.length) {
+            revert HimalayaCompound__setMarketsV3_invalidInput();
+        }
+        for (uint256 i = 0; i < markets.length; i++) {
+            isMarketV3[markets[i]] = isMarketActive[i];
+        }
+    }
 
-    return true;
-  }
+    function _handleOutboundFromV2(
+        Migration memory migration
+    ) internal returns (bool) {
+        if (
+            migration.amount >
+            getDepositBalanceV2(migration.owner, migration.fromMarket)
+        ) {
+            revert HimalayaCompound__handleOutboundFromV2_invalidAmount();
+        }
+        if (migration.debtAmount != 0) {
+            if (
+                migration.debtAmount >
+                getBorrowBalanceV2(migration.owner, migration.fromDebtMarket)
+            ) {
+                revert HimalayaCompound__handleOutboundFromV2_invalidAmount();
+            } else {
+                //Pull debtAsset from user
+                SafeERC20.safeTransferFrom(
+                    migration.debtAssetOrigin,
+                    migration.owner,
+                    address(this),
+                    migration.debtAmount
+                );
+                //Approve debt tokens to be repaid
+                SafeERC20.safeIncreaseAllowance(
+                    migration.debtAssetOrigin,
+                    migration.fromDebtMarket,
+                    migration.debtAmount
+                );
+                //Repay debt
+                paybackV2(
+                    migration.owner,
+                    migration.debtAmount,
+                    address(migration.debtAssetOrigin),
+                    migration.fromDebtMarket
+                );
+            }
+        }
 
-  function _handleInboundToV3(
-    address owner,
-    address toMarket,
-    IERC20 asset,
-    uint256 amount,
-    IERC20 debtAsset,
-    uint256 debtAmount
-  )
-    internal
-    returns (bool)
-  {
-    asset.safeIncreaseAllowance(toMarket, amount);
-    depositV3(owner, amount, address(asset), toMarket);
+        //Pull cTokens from user
+        uint256 cTokenBalance = IERC20(migration.fromMarket).balanceOf(
+            migration.owner
+        );
+        SafeERC20.safeTransferFrom(
+            IERC20(migration.fromMarket),
+            migration.owner,
+            address(this),
+            cTokenBalance
+        );
 
-    borrowV3(owner, debtAmount, address(debtAsset), toMarket);
+        //Withdraw funds from V2
+        withdrawV2(
+            migration.amount,
+            address(migration.assetOrigin),
+            migration.fromMarket
+        );
 
-    return true;
-  }
+        return true;
+    }
+
+    function _handleOutboundFromV3(
+        Migration memory migration
+    ) internal returns (bool) {
+        if (
+            migration.amount >
+            getDepositBalanceV3(
+                migration.owner,
+                address(migration.assetOrigin),
+                migration.fromMarket
+            )
+        ) {
+            revert HimalayaCompound__handleOutboundFromV3_invalidAmount();
+        }
+
+        if (migration.debtAmount != 0) {
+            if (
+                migration.debtAmount >
+                getBorrowBalanceV3(
+                    migration.owner,
+                    address(migration.debtAssetOrigin),
+                    migration.fromDebtMarket
+                )
+            ) {
+                revert HimalayaCompound__handleOutboundFromV3_invalidAmount();
+            } else {
+                paybackV3(
+                    migration.owner,
+                    migration.debtAmount,
+                    address(migration.debtAssetOrigin),
+                    migration.fromDebtMarket
+                );
+            }
+        }
+        //Withdraw funds from V3
+        withdrawV3(
+            migration.owner,
+            address(this),
+            migration.amount,
+            address(migration.assetOrigin),
+            migration.fromMarket
+        );
+
+        return true;
+    }
+
+    function _handleInboundToV3(
+        address owner,
+        address toMarket,
+        IERC20 asset,
+        uint256 amount,
+        IERC20 debtAsset,
+        uint256 debtAmount
+    ) internal returns (bool) {
+        asset.safeIncreaseAllowance(toMarket, amount);
+        depositV3(owner, amount, address(asset), toMarket);
+
+        borrowV3(owner, debtAmount, address(debtAsset), toMarket);
+
+        return true;
+    }
 }
