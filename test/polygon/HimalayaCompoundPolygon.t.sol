@@ -23,14 +23,15 @@ import {HimalayaConnext} from "../../src/migrators/HimalayaConnext.sol";
 /**
  * @dev This contract tests the cross chain migration using the HimalayaCompound contract.
  */
-contract HimalayaCompoundPolygonUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils {
+contract HimalayaCompoundPolygonUnitTests is Utils {
   function setUp() public {
     vm.createSelectFork("polygon");
     compoundV2 = new CompoundV2();
     compoundV3 = new CompoundV3();
 
-    himalayaConnext = new HimalayaConnext(CONNEXT_POLYGON);
-    himalayaCompound = new HimalayaCompound(address(himalayaConnext));
+    setTimelock();
+    himalayaConnext = new HimalayaConnext(CONNEXT_POLYGON, address(chief));
+    himalayaCompound = new HimalayaCompound(address(himalayaConnext), address(chief));
 
     setLabels();
     setLabelsCompound();
