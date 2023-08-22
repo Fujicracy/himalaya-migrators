@@ -14,8 +14,9 @@ import {IHimalayaConnext} from "../interfaces/IHimalayaConnext.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IConnext, IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
+import {SystemAccessControl} from "@fuji-v2/src/access/SystemAccessControl.sol";
 
-contract HimalayaConnext is IXReceiver, IHimalayaConnext {
+contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
   using SafeERC20 for IERC20;
 
   IConnext public immutable connext;
@@ -26,7 +27,7 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext {
   //chainId => domainIdConnext
   mapping(uint256 => uint32) public domainIds;
 
-  constructor(address _connext) {
+  constructor(address _connext, address chief) {
     connext = IConnext(_connext);
 
     //mainnet
@@ -35,6 +36,8 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext {
     domainIds[137] = 1886350457;
     //arbitrum
     domainIds[42161] = 1634886255;
+
+    __SystemAccessControl_init(chief);
   }
 
   // * @param transferId the unique identifier of the crosschain transfer
@@ -106,11 +109,21 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext {
     );
   }
 
-  function addHimalayaConnext(uint32 domainId, address himalayaConnext) external {
-    //TODO define modifier
+  function setHimalayaConnext(
+    uint32 domainId,
+    address himalayaConnext,
+    bool active
+  )
+    external
+    onlyTimelock
+  {
     require(
       himalayaConnexts[domainId] == address(0), "HimalayaConnext: himalayaConnext already exists"
     );
-    himalayaConnexts[domainId] = himalayaConnext;
+    if (active) {
+      himalayaConnexts[domainId] = himalayaConnext;
+    } else {
+      himalayaConnexts[domainId] = address(0);
+    }
   }
 }
