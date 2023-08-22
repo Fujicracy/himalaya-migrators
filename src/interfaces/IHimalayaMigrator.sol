@@ -20,11 +20,13 @@ interface IHimalayaMigrator {
     IERC20 assetOrigin; // ERC20 token that is deposited on origin chain
     IERC20 assetDest; // adopted ERC20 token that represents origin asset at destination chain
     uint256 amount; // amount of ERC20 deposit to be migrated
+    address fromDebtMarket; // market on origin chain which owner's debt is in. Only used for CompoundV2, ignored for CompoundV3
     IERC20 debtAssetOrigin; // ERC20 token that is borrowed on origin chain
     IERC20 debtAssetDest; // adopted ERC20 token that represent origin debt asset at destination chain
     uint256 debtAmount; // amount of debt being migrated
     address himalaya; //address of IHimalayaMigrator on destination chain
     uint256 deadline; //period to execute this migration
+    uint256 slippage; //slippage tolerance in BPS
   }
 
   function beginXMigration(Migration memory migration) external returns (bytes32 transferId);

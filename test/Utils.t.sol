@@ -12,6 +12,8 @@ contract Utils is Test {
   IHimalayaConnext public himalayaConnext_Polygon =
     IHimalayaConnext(0x65af59cF04176638836E500EA9bD681795c91ae9);
   IHimalayaConnext public himalayaConnext = IHimalayaConnext(address(0));
+  IHimalayaConnext public himalayaConnext_Arbitrum =
+    IHimalayaConnext(0x65af59cF04176638836E500EA9bD681795c91ae9);
 
   //Mainnet ERC20
   address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -31,7 +33,7 @@ contract Utils is Test {
 
   uint256 AMOUNT_SUPPLY_WBTC = 1e8;
   uint256 AMOUNT_SUPPLY_WETH = 1e18;
-  uint256 AMOUNT_BORROW_USDC = 10e8;
+  uint256 AMOUNT_BORROW_USDC = 1000e6;
 
   function setLabels() internal {
     vm.label(ALICE, "ALICE");

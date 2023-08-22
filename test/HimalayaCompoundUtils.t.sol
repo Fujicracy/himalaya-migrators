@@ -16,12 +16,14 @@ import {HimalayaCompound} from "../src/migrators/HimalayaCompound.sol";
 import {ICompoundV3} from "@fuji-v2/src/interfaces/compoundV3/ICompoundV3.sol";
 
 contract HimalayaCompoundUtils is Test {
+  event BorrowFailed(address toMarket, address debtAsset, uint256 debtAmount);
+
   //Compound Integrations
   CompoundV2 public compoundV2; //only on mainnet
   CompoundV3 public compoundV3;
 
   //HimalayaCompound
-  IHimalayaMigrator public himalayaCompound; //TODO create also for other chains (himalayaCompoundArbitrum and polygon after contracts have been created)
+  IHimalayaMigrator public himalayaCompound;
 
   //Mainnet Compound Markets
   IERC20 public cETHV2 = IERC20(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5); //cETH
@@ -170,6 +172,17 @@ contract HimalayaCompoundUtils is Test {
     IERC20(cTokenAddr).transfer(msg.sender, balanceCTokenAfter - balanceCTokenBefore);
   }
 
+  function _utils_borrowV2_mainnet(uint256 amount, address market) internal {
+    ICToken cToken = ICToken(address(market));
+
+    uint256 status = cToken.borrow(amount);
+    require(status == 0, "borrow failed");
+  }
+
+  function _utils_borrowV3(uint256 amount, address asset, address market) public {
+    ICompoundV3(market).withdraw(asset, amount);
+  }
+
   function _enterCollatMarketV2_mainnet(address asset) private {
     IComptroller comptroller = IComptroller(0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B);
 
@@ -187,7 +200,6 @@ contract HimalayaCompoundUtils is Test {
   }
 
   function _utils_depositV3(
-    // address user,
     uint256 amount,
     address asset,
     address cMarketV3
@@ -197,5 +209,37 @@ contract HimalayaCompoundUtils is Test {
   {
     ICompoundV3(cMarketV3).supply(asset, amount);
     success = true;
+  }
+
+  function _utils_positionIsHealthy(
+    address market,
+    address asset,
+    address debtAsset,
+    uint256 amount,
+    uint256 debtAmount
+  )
+    public
+    returns (bool)
+  {
+    uint256 minAmount = ICompoundV3(market).baseBorrowMin();
+    if (debtAmount < minAmount) {
+      return false;
+    }
+    uint256 RANDOM_USER_PK = 0xA17461917319;
+    address RANDOM_USER = vm.addr(RANDOM_USER_PK);
+
+    deal(asset, RANDOM_USER, amount);
+
+    vm.startPrank(RANDOM_USER);
+    IERC20(asset).approve(market, amount);
+    _utils_depositV3(amount, asset, market);
+
+    try ICompoundV3(market).withdraw(debtAsset, debtAmount) {
+      vm.stopPrank();
+      return true;
+    } catch {
+      vm.stopPrank();
+      return false;
+    }
   }
 }

@@ -54,61 +54,6 @@ contract CompoundV2 {
     return asset == 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
   }
 
-  function depositV2(
-    uint256 amount,
-    address asset,
-    address cTokenAddr
-  )
-    internal
-    returns (bool success)
-  {
-    _enterCollatMarket(cTokenAddr);
-
-    uint256 balanceCTokenBefore = IERC20(cTokenAddr).balanceOf(address(this));
-    if (_isWETH(asset)) {
-      ICETH cETH = ICETH(cTokenAddr);
-      // unwrap WETH to ETH
-      IWETH9(asset).withdraw(amount);
-
-      // cEth reverts if mint unsuccessful
-      cETH.mint{value: amount}();
-    } else {
-      ICERC20 cToken = ICERC20(cTokenAddr);
-
-      uint256 status = cToken.mint(amount);
-
-      if (status != 0) {
-        revert CompoundV2__deposit_failed(status);
-      }
-    }
-
-    uint256 balanceCTokenAfter = IERC20(cTokenAddr).balanceOf(address(this));
-    SafeERC20.safeTransfer(IERC20(cTokenAddr), msg.sender, balanceCTokenAfter - balanceCTokenBefore);
-    success = true;
-  }
-
-  function borrowV2(
-    uint256 amount,
-    address asset,
-    address cTokenAddr
-  )
-    internal
-    returns (bool success)
-  {
-    ICToken cToken = ICToken(cTokenAddr);
-
-    uint256 status = cToken.borrow(amount);
-    if (status != 0) {
-      revert CompoundV2__borrow_failed(status);
-    }
-
-    // wrap ETH to WETH
-    if (_isWETH(asset)) {
-      IWETH9(asset).deposit{value: amount}();
-    }
-    success = true;
-  }
-
   function withdrawV2(
     uint256 amount,
     address asset,
@@ -132,6 +77,7 @@ contract CompoundV2 {
   }
 
   function paybackV2(
+    address user,
     uint256 amount,
     address asset,
     address cTokenAddr
@@ -144,11 +90,11 @@ contract CompoundV2 {
       // unwrap WETH to ETH
       IWETH9(asset).withdraw(amount);
 
-      cETH.repayBorrow{value: amount}();
+      cETH.repayBorrowBehalf{value: amount}(user);
     } else {
       ICERC20 cToken = ICERC20(cTokenAddr);
 
-      uint256 status = cToken.repayBorrow(amount);
+      uint256 status = cToken.repayBorrowBehalf(user, amount);
       if (status != 0) {
         revert CompoundV2__payback_failed(status);
       }
