@@ -19,6 +19,7 @@ import {HimalayaCompoundUtils} from "../HimalayaCompoundUtils.t.sol";
 import {ConnextUtils} from "../ConnextUtils.t.sol";
 import {Utils} from "../Utils.t.sol";
 import {HimalayaConnext} from "../../src/migrators/HimalayaConnext.sol";
+import {IHimalayaConnext} from "../../src/interfaces/IHimalayaConnext.sol";
 
 /**
  * @dev This contract tests the cross chain migration using the HimalayaCompound contract.
@@ -35,6 +36,10 @@ contract HimalayaCompoundUnitTests is Utils {
             address(himalayaConnext),
             address(chief)
         );
+
+    bytes memory executionCall =
+      abi.encodeWithSelector(IHimalayaConnext.setMigrator.selector, address(himalayaCompound), true);
+    _callWithTimelock(address(himalayaConnext), executionCall);
 
     setLabels();
     setLabelsCompound();
