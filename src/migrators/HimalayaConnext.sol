@@ -68,7 +68,7 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
     external
     returns (bytes memory)
   {
-    //TODO check params
+    //TODO check params - implement with permits
 
     IHimalayaMigrator.Migration memory migration =
       abi.decode(callData, (IHimalayaMigrator.Migration));
@@ -95,7 +95,7 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
     //Approve connext to pull funds
     migration.assetOrigin.safeApprove(address(connext), migration.amount);
 
-    //TODO check migration struct parameters are secure and correct
+    //TODO check migration struct parameters are secure and correct - implement with permits
     transferId = connext.xcall(
       // _destination: Domain ID of the destination chain
       domainIds[migration.toChain],
