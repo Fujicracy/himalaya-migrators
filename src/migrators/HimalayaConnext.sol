@@ -124,9 +124,6 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
     external
     onlyTimelock
   {
-    require(
-      himalayaConnexts[domainId] == address(0), "HimalayaConnext: himalayaConnext already exists"
-    );
     if (active) {
       himalayaConnexts[domainId] = himalayaConnext;
     } else {
