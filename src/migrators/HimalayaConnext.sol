@@ -19,6 +19,9 @@ import {SystemAccessControl} from "@fuji-v2/src/access/SystemAccessControl.sol";
 contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
   using SafeERC20 for IERC20;
 
+  //@dev custom error
+  error HimalayaConnext__onlyAllowedMigrator_notAuthorized();
+
   IConnext public immutable connext;
 
   //chainId => himalayaConnexts
@@ -26,6 +29,16 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
 
   //chainId => domainIdConnext
   mapping(uint256 => uint32) public domainIds;
+
+  //migrator => isAllowed
+  mapping(address => bool) public allowedMigrator;
+
+  modifier onlyAllowedMigrator() {
+    if (!allowedMigrator[msg.sender]) {
+      revert HimalayaConnext__onlyAllowedMigrator_notAuthorized();
+    }
+    _;
+  }
 
   constructor(address _connext, address chief) {
     connext = IConnext(_connext);
@@ -78,6 +91,7 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
 
   function xCall(IHimalayaMigrator.Migration memory migration)
     external
+    onlyAllowedMigrator
     returns (bytes32 transferId)
   {
     //TODO decide on token is not "bridgeable" by connext
@@ -125,5 +139,9 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
     } else {
       himalayaConnexts[domainId] = address(0);
     }
+  }
+
+  function setMigrator(address migrator, bool active) external onlyTimelock {
+    allowedMigrator[migrator] = active;
   }
 }
