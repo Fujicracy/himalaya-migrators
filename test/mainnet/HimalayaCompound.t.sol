@@ -41,6 +41,20 @@ contract HimalayaCompoundUnitTests is Utils {
       abi.encodeWithSelector(IHimalayaConnext.setMigrator.selector, address(himalayaCompound), true);
     _callWithTimelock(address(himalayaConnext), executionCall);
 
+    uint32[] memory domainIds = new uint32[](3);
+    uint32[] memory ids = new uint32[](3);
+    //mainnet
+    ids[0] = 1;
+    domainIds[0] = 6648936;
+    //polygon
+    ids[1] = 137;
+    domainIds[1] = 1886350457;
+    //arbitrum
+    ids[2] = 42161;
+    domainIds[2] = 1634886255;
+    executionCall = abi.encodeWithSelector(IHimalayaConnext.setDomainIds.selector, ids, domainIds);
+    _callWithTimelock(address(himalayaConnext), executionCall);
+
     setLabels();
     setLabelsCompound();
     addMarketsDestChain_mainnet();

@@ -21,6 +21,7 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
 
   //@dev custom error
   error HimalayaConnext__onlyAllowedMigrator_notAuthorized();
+  error HimalayaConnext__setDomainIds_invalidInput();
 
   IConnext public immutable connext;
 
@@ -42,14 +43,6 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
 
   constructor(address _connext, address chief) {
     connext = IConnext(_connext);
-
-    //mainnet
-    domainIds[1] = 6648936;
-    //polygon
-    domainIds[137] = 1886350457;
-    //arbitrum
-    domainIds[42161] = 1634886255;
-
     __SystemAccessControl_init(chief);
   }
 
@@ -143,5 +136,20 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
 
   function setMigrator(address migrator, bool active) external onlyTimelock {
     allowedMigrator[migrator] = active;
+  }
+
+  function setDomainIds(
+    uint256[] memory chainIds_,
+    uint32[] memory domainIds_
+  )
+    external
+    onlyTimelock
+  {
+    if (chainIds_.length != domainIds_.length || domainIds_.length == 0) {
+      revert HimalayaConnext__setDomainIds_invalidInput();
+    }
+    for (uint256 i = 0; i < chainIds_.length; i++) {
+      domainIds[chainIds_[i]] = domainIds_[i];
+    }
   }
 }
