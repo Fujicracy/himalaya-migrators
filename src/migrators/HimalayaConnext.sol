@@ -69,6 +69,8 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
     returns (bytes memory)
   {
     //TODO check params - implement with permits
+    //NOTE ensure checking the slipped amount and replace in migration struct,
+    // because 99% of the time `amount` != Migration.amount
 
     IHimalayaMigrator.Migration memory migration =
       abi.decode(callData, (IHimalayaMigrator.Migration));
