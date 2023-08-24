@@ -62,7 +62,7 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
     deal(WETH_Polygon, ALICE, AMOUNT_SUPPLY_WETH);
     assertEq(IERC20(WETH_Polygon).balanceOf(ALICE), AMOUNT_SUPPLY_WETH);
 
-    //Deposit 100 WETH into CompoundV3 on polygon
+    //Deposit WETH into CompoundV3 on polygon
     vm.startPrank(ALICE);
     IERC20(WETH_Polygon).approve(address(cUSDCV3_Polygon), AMOUNT_SUPPLY_WETH);
     _utils_depositV3(AMOUNT_SUPPLY_WETH, WETH_Polygon, cUSDCV3_Polygon);
@@ -72,7 +72,7 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
       AMOUNT_SUPPLY_WETH / 10
     );
 
-    //Migrate 100 WETH deposit position from CompoundV3 on polygon to CompoundV3 on other chain
+    //Migrate WETH deposit position from CompoundV3 on polygon to CompoundV3 on other chain
     IHimalayaMigrator.Migration memory migration;
     migration.owner = ALICE;
     migration.fromMarket = cUSDCV3_Polygon;
@@ -96,7 +96,7 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
   }
 
   function test_tryHandleInboundToV3WithoutHimalayaConnext() public {
-    //Migration from 100 WETH deposit position from CompoundV2 on other chain to CompoundV3 on polygon
+    //Migration from WETH deposit position from CompoundV2 on other chain to CompoundV3 on polygon
     IHimalayaMigrator.Migration memory migration;
     migration.owner = ALICE;
     migration.fromMarket = cUSDCV3_Arbitrum;
@@ -127,7 +127,7 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
   }
 
   function test_handleInboundToV3WithHimalayaConnext() public {
-    //Migration from 100 WETH deposit position from CompoundV2 on other chain to CompoundV3 on polygon
+    //Migration from WETH deposit position from CompoundV2 on other chain to CompoundV3 on polygon
     IHimalayaMigrator.Migration memory migration;
     migration.owner = ALICE;
     migration.fromMarket = cUSDCV3_Arbitrum;
@@ -302,7 +302,7 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
     deal(USDC_Polygon, ALICE, AMOUNT_BORROW_USDC * 10);
     assertEq(IERC20(USDC_Polygon).balanceOf(ALICE), AMOUNT_BORROW_USDC * 10);
 
-    //Deposit 100 WETH into CompoundV3 on mainnet
+    //Deposit WETH into CompoundV3 on mainnet
     vm.startPrank(ALICE);
     IERC20(WETH_Polygon).approve(address(cUSDCV3_Polygon), AMOUNT_SUPPLY_WETH);
     _utils_depositV3(AMOUNT_SUPPLY_WETH, WETH_Polygon, cUSDCV3_Polygon);
@@ -323,7 +323,7 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
       vm.roll(block.number + 1);
     }
 
-    //Migrate 100 WETH_Polygon deposit position from CompoundV3 on polygon to CompoundV3 on other chain
+    //Migrate WETH_Polygon deposit position from CompoundV3 on polygon to CompoundV3 on other chain
     IHimalayaMigrator.Migration memory migration;
     migration.owner = ALICE;
     migration.fromMarket = cUSDCV3_Polygon;
