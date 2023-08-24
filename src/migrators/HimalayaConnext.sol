@@ -58,7 +58,7 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
    *
    */
   function xReceive(
-    bytes32, /* transferId */
+    bytes32 transferId,
     uint256, /* amount */
     address, /* asset */
     address, /* originSender */
@@ -81,7 +81,7 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
     //Handle inbound
     IHimalayaMigrator(migration.himalaya).receiveXMigration(callData);
 
-    return "";
+    return abi.encode(transferId);
   }
 
   function xCall(IHimalayaMigrator.Migration memory migration)
