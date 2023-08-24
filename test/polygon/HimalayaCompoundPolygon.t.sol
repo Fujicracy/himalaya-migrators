@@ -260,6 +260,7 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
     }
     //case 2: no amounts to migrate
     else if (collateralAmount == 0 && debtAmount == 0) {
+      // TODO: this case is never reached because vm.assumes `collateralAmount` > 1e14
       vm.expectRevert(
         HimalayaCompound.HimalayaCompound__handleOutboundFromV3_invalidAmount.selector
       );

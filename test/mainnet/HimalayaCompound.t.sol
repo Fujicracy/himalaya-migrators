@@ -321,6 +321,7 @@ contract HimalayaCompoundUnitTests is Utils {
     }
     //case 2: no amounts to migrate
     else if (collateralAmount == 0 && debtAmount == 0) {
+      // TODO: this case is never reached because vm.assumes `collateralAmount` > 1e14
       vm.expectRevert(
         HimalayaCompound.HimalayaCompound__handleOutboundFromV3_invalidAmount.selector
       );
@@ -416,6 +417,7 @@ contract HimalayaCompoundUnitTests is Utils {
   }
 
   function test_handleInboundToV3WithHimalayaConnextWithInvalidAmount() public {
+    // TODO this test must be updated with the expected behavior of try-catch
     //Migration from 0 WETH deposit position from other chain to CompoundV3 on mainnet
     IHimalayaMigrator.Migration memory migration;
     migration.owner = ALICE;
