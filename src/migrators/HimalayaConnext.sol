@@ -15,8 +15,9 @@ import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/Safe
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IConnext, IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
 import {SystemAccessControl} from "@fuji-v2/src/access/SystemAccessControl.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
+contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl, UUPSUpgradeable {
   using SafeERC20 for IERC20;
 
   //@dev custom error
@@ -45,6 +46,8 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
     connext = IConnext(_connext);
     __SystemAccessControl_init(chief);
   }
+
+  function _authorizeUpgrade(address newImplementation) internal override onlyTimelock {}
 
   // * @param transferId the unique identifier of the crosschain transfer
   // * @param amount the amount of transferring asset, after slippage, the recipient address receives

@@ -16,8 +16,15 @@ import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/Safe
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IHimalayaConnext} from "../interfaces/IHimalayaConnext.sol";
 import {SystemAccessControl} from "@fuji-v2/src/access/SystemAccessControl.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, SystemAccessControl {
+contract HimalayaCompound is
+  IHimalayaMigrator,
+  CompoundV2,
+  CompoundV3,
+  SystemAccessControl,
+  UUPSUpgradeable
+{
   using SafeERC20 for IERC20;
 
   //@dev custom error
@@ -51,6 +58,8 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, SystemAc
     himalayaConnext = IHimalayaConnext(_himalayaConnext);
     __SystemAccessControl_init(chief);
   }
+
+  function _authorizeUpgrade(address newImplementation) internal override onlyTimelock {}
 
   function beginXMigration(Migration memory migration) external returns (bytes32 transferId) {
     if (!isMarketOnDestChain[migration.toChain][migration.toMarket]) {
