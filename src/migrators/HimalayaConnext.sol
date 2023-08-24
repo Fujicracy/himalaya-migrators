@@ -154,4 +154,7 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
       domainIds[chainIds_[i]] = domainIds_[i];
     }
   }
+
+  //TODO Add bumpTransfer refer to:
+  // https://github.com/Fujicracy/fuji-v2/blob/ace943c1c69e896ad3b06f3c16dd02c3c59be2d1/packages/protocol/src/routers/ConnextRouter.sol#L448-L456
 }
