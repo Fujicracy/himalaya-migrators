@@ -44,12 +44,11 @@ interface IHimalayaConnext is IXReceiver {
    *
    * @notice Sets the domainIds used to call connext.
    *
-   * @param chainIds array of chain ids to be associated with `domainIds`
-  * @param domainIds array of domain ids to be associated with `chainIds`
+   * @param chainIds_ array of chain ids to be associated with `domainIds`
+   * @param domainIds array of domain ids to be associated with `chainIds`
    *
    * @dev Requirements:
    * - `msg.sender` must be timelock.
    */
-  function setDomainIds(uint256[] memory chainIds_, uint32[] memory domainIds)
-    external;
+  function setDomainIds(uint256[] memory chainIds_, uint32[] memory domainIds) external;
 }
