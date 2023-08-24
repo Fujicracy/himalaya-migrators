@@ -79,6 +79,9 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
     migration.assetDest.safeApprove(migration.himalaya, migration.amount);
 
     //Handle inbound
+    //TODO this call should be wrapped in a try-catch.
+    // If catch emit an event and move the funds to a seperate contract and make them claimable by the user.
+    // perhaps a FujiV2 `Borrowingvault.deposit()`
     IHimalayaMigrator(migration.himalaya).receiveXMigration(callData);
 
     return abi.encode(transferId);
