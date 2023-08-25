@@ -14,9 +14,10 @@ import {IHimalayaConnext} from "../interfaces/IHimalayaConnext.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IConnext, IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
+import {HimalayaPermits} from "../permits/HimalayaPermits.sol";
 import {SystemAccessControl} from "@fuji-v2/src/access/SystemAccessControl.sol";
 
-contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
+contract HimalayaConnext is HimalayaPermits, IXReceiver, IHimalayaConnext, SystemAccessControl {
   using SafeERC20 for IERC20;
 
   //@dev custom error
@@ -71,11 +72,10 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
     //TODO check params - implement with permits
     //NOTE ensure checking the slipped amount and replace in migration struct,
     // because 99% of the time `amount` != Migration.amount
-
-    IHimalayaMigrator.Migration memory migration =
-      abi.decode(callData, (IHimalayaMigrator.Migration));
-
     //Approve IHimalayaMigrator to pull funds
+    (IHimalayaMigrator.Migration memory migration, uint8 v, bytes32 r, bytes32 s) =
+      abi.decode(callData, (IHimalayaMigrator.Migration, uint8, bytes32, bytes32));
+
     migration.assetDest.safeApprove(migration.himalaya, migration.amount);
 
     //Handle inbound
