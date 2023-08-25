@@ -14,7 +14,7 @@ contract DeployHimalayaConnext is Script {
   function run() public {
     uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
     vm.startBroadcast(deployerPrivateKey);
-    IHimalayaConnext himalayaConnext = new HimalayaConnext(CONNEXT_POLYGON);
+    // IHimalayaConnext himalayaConnext = new HimalayaConnext(CONNEXT_POLYGON);
 
     vm.stopBroadcast();
   }

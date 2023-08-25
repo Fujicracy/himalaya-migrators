@@ -15,9 +15,14 @@ import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/Safe
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IConnext, IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
 import {HimalayaPermits} from "../permits/HimalayaPermits.sol";
+import {SystemAccessControl} from "@fuji-v2/src/access/SystemAccessControl.sol";
 
-contract HimalayaConnext is HimalayaPermits, IXReceiver, IHimalayaConnext {
+contract HimalayaConnext is HimalayaPermits, IXReceiver, IHimalayaConnext, SystemAccessControl {
   using SafeERC20 for IERC20;
+
+  //@dev custom error
+  error HimalayaConnext__onlyAllowedMigrator_notAuthorized();
+  error HimalayaConnext__setDomainIds_invalidInput();
 
   IConnext public immutable connext;
 
@@ -27,15 +32,19 @@ contract HimalayaConnext is HimalayaPermits, IXReceiver, IHimalayaConnext {
   //chainId => domainIdConnext
   mapping(uint256 => uint32) public domainIds;
 
-  constructor(address _connext) {
-    connext = IConnext(_connext);
+  //migrator => isAllowed
+  mapping(address => bool) public allowedMigrator;
 
-    //mainnet
-    domainIds[1] = 6648936;
-    //polygon
-    domainIds[137] = 1886350457;
-    //arbitrum
-    domainIds[42161] = 1634886255;
+  modifier onlyAllowedMigrator() {
+    if (!allowedMigrator[msg.sender]) {
+      revert HimalayaConnext__onlyAllowedMigrator_notAuthorized();
+    }
+    _;
+  }
+
+  constructor(address _connext, address chief) {
+    connext = IConnext(_connext);
+    __SystemAccessControl_init(chief);
   }
 
   // * @param transferId the unique identifier of the crosschain transfer
@@ -50,7 +59,7 @@ contract HimalayaConnext is HimalayaPermits, IXReceiver, IHimalayaConnext {
    *
    */
   function xReceive(
-    bytes32, /* transferId */
+    bytes32 transferId,
     uint256, /* amount */
     address, /* asset */
     address, /* originSender */
@@ -60,22 +69,27 @@ contract HimalayaConnext is HimalayaPermits, IXReceiver, IHimalayaConnext {
     external
     returns (bytes memory)
   {
-    //@dev asset of migration struct is the address on origin chain. We want the asset address on the destination chain
+    //TODO check params - implement with permits
+    //NOTE ensure checking the slipped amount and replace in migration struct,
+    // because 99% of the time `amount` != Migration.amount
+    //Approve IHimalayaMigrator to pull funds
     (IHimalayaMigrator.Migration memory migration, uint8 v, bytes32 r, bytes32 s) =
       abi.decode(callData, (IHimalayaMigrator.Migration, uint8, bytes32, bytes32));
 
-    //Approve IHimalayaMigrator to pull funds
     migration.assetDest.safeApprove(migration.himalaya, migration.amount);
 
     //Handle inbound
-    //TODO this next call has to be wrapped in a try-catch
+    //TODO this call should be wrapped in a try-catch.
+    // If catch emit an event and move the funds to a seperate contract and make them claimable by the user.
+    // perhaps a FujiV2 `Borrowingvault.deposit()`
     IHimalayaMigrator(migration.himalaya).receiveXMigration(callData);
 
-    return "";
+    return abi.encode(transferId);
   }
 
   function xCall(IHimalayaMigrator.Migration memory migration)
     external
+    onlyAllowedMigrator
     returns (bytes32 transferId)
   {
     //TODO decide on token is not "bridgeable" by connext
@@ -86,7 +100,7 @@ contract HimalayaConnext is HimalayaPermits, IXReceiver, IHimalayaConnext {
     //Approve connext to pull funds
     migration.assetOrigin.safeApprove(address(connext), migration.amount);
 
-    //TODO check migration struct parameters are secure and correct
+    //TODO check migration struct parameters are secure and correct - implement with permits
     transferId = connext.xcall(
       // _destination: Domain ID of the destination chain
       domainIds[migration.toChain],
@@ -107,11 +121,40 @@ contract HimalayaConnext is HimalayaPermits, IXReceiver, IHimalayaConnext {
     );
   }
 
-  function addHimalayaConnext(uint32 domainId, address himalayaConnext) external {
-    //TODO define modifier
-    require(
-      himalayaConnexts[domainId] == address(0), "HimalayaConnext: himalayaConnext already exists"
-    );
-    himalayaConnexts[domainId] = himalayaConnext;
+  function setHimalayaConnext(
+    uint32 domainId,
+    address himalayaConnext,
+    bool active
+  )
+    external
+    onlyTimelock
+  {
+    if (active) {
+      himalayaConnexts[domainId] = himalayaConnext;
+    } else {
+      himalayaConnexts[domainId] = address(0);
+    }
   }
+
+  function setMigrator(address migrator, bool active) external onlyTimelock {
+    allowedMigrator[migrator] = active;
+  }
+
+  function setDomainIds(
+    uint256[] memory chainIds_,
+    uint32[] memory domainIds_
+  )
+    external
+    onlyTimelock
+  {
+    if (chainIds_.length != domainIds_.length || domainIds_.length == 0) {
+      revert HimalayaConnext__setDomainIds_invalidInput();
+    }
+    for (uint256 i = 0; i < chainIds_.length; i++) {
+      domainIds[chainIds_[i]] = domainIds_[i];
+    }
+  }
+
+  //TODO Add bumpTransfer refer to:
+  // https://github.com/Fujicracy/fuji-v2/blob/ace943c1c69e896ad3b06f3c16dd02c3c59be2d1/packages/protocol/src/routers/ConnextRouter.sol#L448-L456
 }

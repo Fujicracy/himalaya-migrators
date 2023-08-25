@@ -15,8 +15,9 @@ import {CompoundV3} from "../integrations/CompoundV3.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IHimalayaConnext} from "../interfaces/IHimalayaConnext.sol";
+import {SystemAccessControl} from "@fuji-v2/src/access/SystemAccessControl.sol";
 
-contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
+contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, SystemAccessControl {
   using SafeERC20 for IERC20;
 
   //@dev custom error
@@ -24,9 +25,10 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
   error HimalayaCompound__receiveXMigration_marketNotSupported();
   error HimalayaCompound__handleOutboundFromV2_invalidAmount();
   error HimalayaCompound__handleOutboundFromV3_invalidAmount();
-  error HimalayaCompound__addMarketsDestChain_invalidInput();
-  error HimalayaCompound__onlyAdmin_notAuthorized();
-  error HimalayaCompound__handleOutboundFromV2_invalidDebtAmount();
+  error HimalayaCompound__setMarketsDestChain_invalidInput();
+  error HimalayaCompound__setMarketsV2_invalidInput();
+  error HimalayaCompound__setMarketsV3_invalidInput();
+  error HimalayaCompound__onlyHimalayaConnext_notAuthorized();
   error HimalayaCompound__beginXMigration_invalidAmount();
 
   //marketAddress => isMarket
@@ -38,18 +40,16 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
 
   IHimalayaConnext public immutable himalayaConnext;
 
-  address public immutable admin;
-
-  modifier onlyAdmin() {
-    if (msg.sender != admin) {
-      revert HimalayaCompound__onlyAdmin_notAuthorized();
+  modifier onlyHimalayaConnext() {
+    if (msg.sender != address(himalayaConnext)) {
+      revert HimalayaCompound__onlyHimalayaConnext_notAuthorized();
     }
     _;
   }
 
-  constructor(address _himalayaConnext) {
+  constructor(address _himalayaConnext, address chief) {
     himalayaConnext = IHimalayaConnext(_himalayaConnext);
-    admin = msg.sender;
+    __SystemAccessControl_init(chief);
   }
 
   function beginXMigration(Migration memory migration) external returns (bytes32 transferId) {
@@ -74,7 +74,7 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     transferId = himalayaConnext.xCall(migration);
   }
 
-  function receiveXMigration(bytes memory data) external returns (bool) {
+  function receiveXMigration(bytes memory data) external onlyHimalayaConnext returns (bool) {
     Migration memory migration = abi.decode(data, (Migration));
 
     if (!isMarketV3[migration.toMarket]) {
@@ -96,31 +96,50 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3 {
     return true;
   }
 
-  function addMarketsDestChain(
+  function setMarketsDestChain(
     uint48[] memory chainIds,
-    address[] memory markets
+    address[] memory markets,
+    bool[] memory isMarketActive
   )
     external
-    onlyAdmin
+    onlyTimelock
   {
-    if (chainIds.length != markets.length) {
-      revert HimalayaCompound__addMarketsDestChain_invalidInput();
+    if (chainIds.length != markets.length || chainIds.length != isMarketActive.length) {
+      revert HimalayaCompound__setMarketsDestChain_invalidInput();
     }
 
     for (uint256 i = 0; i < chainIds.length; i++) {
-      isMarketOnDestChain[chainIds[i]][markets[i]] = true;
+      isMarketOnDestChain[chainIds[i]][markets[i]] = isMarketActive[i];
     }
   }
 
-  function addMarketsV2(address[] memory markets) external onlyAdmin {
+  function setMarketsV2(
+    address[] memory markets,
+    bool[] memory isMarketActive
+  )
+    external
+    onlyTimelock
+  {
+    if (markets.length != isMarketActive.length) {
+      revert HimalayaCompound__setMarketsV2_invalidInput();
+    }
     for (uint256 i = 0; i < markets.length; i++) {
-      isMarketV2[markets[i]] = true;
+      isMarketV2[markets[i]] = isMarketActive[i];
     }
   }
 
-  function addMarketsV3(address[] memory markets) external onlyAdmin {
+  function setMarketsV3(
+    address[] memory markets,
+    bool[] memory isMarketActive
+  )
+    external
+    onlyTimelock
+  {
+    if (markets.length != isMarketActive.length) {
+      revert HimalayaCompound__setMarketsV3_invalidInput();
+    }
     for (uint256 i = 0; i < markets.length; i++) {
-      isMarketV3[markets[i]] = true;
+      isMarketV3[markets[i]] = isMarketActive[i];
     }
   }
 
