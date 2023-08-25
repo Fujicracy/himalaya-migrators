@@ -16,43 +16,47 @@ import {HimalayaCompound} from "../src/migrators/HimalayaCompound.sol";
 import {ICompoundV3} from "@fuji-v2/src/interfaces/compoundV3/ICompoundV3.sol";
 
 contract HimalayaCompoundUtils is Test {
-  uint256 public constant ALICE_PK = 0xA;
-  address public ALICE = vm.addr(ALICE_PK);
-
-  //Mainnet ERC20
-  address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-  address public constant WSTETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
-  address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-  address public constant WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+  event BorrowFailed(address toMarket, address debtAsset, uint256 debtAmount);
 
   //Compound Integrations
   CompoundV2 public compoundV2; //only on mainnet
   CompoundV3 public compoundV3;
 
   //HimalayaCompound
-  IHimalayaMigrator public himalayaCompound; //TODO create also for other chains (himalayaCompoundArbitrum and polygon after contracts have been created)
+  IHimalayaMigrator public himalayaCompound;
 
   //Mainnet Compound Markets
-  IERC20 public cETHV2 = IERC20(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5);
+  IERC20 public cETHV2 = IERC20(0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5); //cETH
+  IERC20 public cDAIV2 = IERC20(0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643); //cDAI
+  IERC20 public cUSDCV2 = IERC20(0x39AA39c021dfbaE8faC545936693aC917d5E7563); //cUSDC
+  IERC20 public cUSDTV2 = IERC20(0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9); //cUSDT
   address public cWETHV3 = 0xA17581A9E3356d9A858b789D68B4d866e593aE94;
   address public cUSDCV3 = 0xc3d688B66703497DAA19211EEdff47f25384cdc3;
+
   //Polygon Compound Markets
   address public cUSDCV3_Polygon = 0xF25212E676D1F7F89Cd72fFEe66158f541246445;
 
-  //Mainnet Connext
-  address public constant CONNEXT_MAINNET = 0x8898B472C54c31894e3B9bb83cEA802a5d0e63C6;
+  //Arbitrum Compound Markets
+  address public cUSDCV3_Arbitrum = 0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA;
 
-  uint256 AMOUNT_SUPPLY_WBTC = 1e8;
-  uint256 AMOUNT_BORROW_USDC = 10e8;
+  // IERC20 public cAAVEV2 = 0xe65cdB6479BaC1e22340E4E755fAE7E509EcD06c; //cAAVE
+  // IERC20 public cBATV2 = 0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E; //cBAT
+  // IERC20 public cCOMPV2 = 0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4; //cCOMP
+  // IERC20 public cFEIV2 = 0x7713DD9Ca933848F6819F38B8352D9A15EA73F67; //cFEI
+  // IERC20 public cLINKV2 = 0xFAce851a4921ce59e912d19329929CE6da6EB0c7; //cLINK
+  // IERC20 public cMKRV2 = 0x95b4eF2869eBD94BEb4eEE400a99824BF5DC325b; //cMKR
+  // IERC20 public cREPV2 = 0x158079Ee67Fce2f58472A96584A73C7Ab9AC95c1; //cREP
+  // IERC20 public cSAIV2 = 0xF5DCe57282A584D2746FaF1593d3121Fcac444dC; //cSAI
+  // IERC20 public cSUSHIV2 = 0x4B0181102A0112A2ef11AbEE5563bb4a3176c9d7; //cSUSHI
+  // IERC20 public cTUSDV2 = 0x12392F67bdf24faE0AF363c24aC620a2f67DAd86; //cTUSD
+  // IERC20 public cUNIV2 = 0x35A18000230DA775CAc24873d00Ff85BccdeD550; //cUNI
+  // IERC20 public cUSDPV2 = 0x041171993284df560249B57358F931D9eB7b925D; //cUSDP
+  // IERC20 public cWBTCV2 = 0xC11b1268C1A384e55C48c2391d8d480264A3A7F4; //cWBTC
+  // IERC20 public cWBTC2V2 = 0xccF4429DB6322D5C611ee964527D42E5d685DD6a; //cWBTC2
+  // IERC20 public cYFIV2 = 0x80a2AE356fc9ef4305676f7a3E2Ed04e12C33946; //cYFI
+  // IERC20 public cZRXV2 = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643; //cZRX
 
-  function setLabels() internal {
-    //TODO rename this function and set this labels dynamically
-    vm.label(ALICE, "ALICE");
-    vm.label(WETH, "WETH");
-    vm.label(WSTETH, "WSTETH");
-    vm.label(USDC, "USDC");
-    vm.label(WBTC, "WBTC");
-
+  function setLabelsCompound() internal {
     vm.label(address(compoundV2), "compoundV2");
     vm.label(address(compoundV3), "compoundV3");
     vm.label(address(himalayaCompound), "himalayaCompound");
@@ -60,6 +64,89 @@ contract HimalayaCompoundUtils is Test {
     vm.label(address(cETHV2), "cETHV2");
     vm.label(cWETHV3, "cWETHV3");
     vm.label(cUSDCV3, "cUSDCV3");
+
+    vm.label(cUSDCV3_Polygon, "cUSDCV3_Polygon");
+    vm.label(cUSDCV3_Arbitrum, "cUSDCV3_Arbitrum");
+  }
+
+  function addMarkets_mainnet() internal {
+    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
+
+    address[] memory marketsV2 = new address[](3);
+    marketsV2[0] = address(cETHV2);
+    marketsV2[1] = address(cUSDCV2);
+    marketsV2[2] = address(cUSDTV2);
+
+    address[] memory marketsV3 = new address[](2);
+    marketsV3[0] = cWETHV3;
+    marketsV3[1] = cUSDCV3;
+
+    hc.addMarketsV2(marketsV2);
+    hc.addMarketsV3(marketsV3);
+  }
+
+  function addMarkets_polygon() internal {
+    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
+
+    address[] memory marketsV3 = new address[](1);
+    marketsV3[0] = cUSDCV3_Polygon;
+
+    hc.addMarketsV3(marketsV3);
+  }
+
+  function addMarkets_arbitrum() internal {
+    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
+
+    address[] memory marketsV3 = new address[](1);
+    marketsV3[0] = cUSDCV3_Arbitrum;
+
+    hc.addMarketsV3(marketsV3);
+  }
+
+  function addMarketsDestChain_mainnet() internal {
+    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
+
+    uint48[] memory chainIds = new uint48[](2);
+    chainIds[0] = 137;
+    chainIds[1] = 42161;
+
+    address[] memory markets = new address[](2);
+    markets[0] = cUSDCV3_Polygon; //polygon cUSDCV3
+    markets[1] = cUSDCV3_Arbitrum; //arbitrum cUSDCV3
+
+    hc.addMarketsDestChain(chainIds, markets);
+  }
+
+  function addMarketsDestChain_arbitrum() internal {
+    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
+
+    uint48[] memory chainIds = new uint48[](3);
+    chainIds[0] = 137;
+    chainIds[1] = 1;
+    chainIds[2] = 1;
+
+    address[] memory markets = new address[](3);
+    markets[0] = cUSDCV3_Polygon; //polygon cUSDCV3
+    markets[1] = cUSDCV3; //mainnet cUSDCV3
+    markets[2] = cWETHV3; //mainnet cWETHV3
+
+    hc.addMarketsDestChain(chainIds, markets);
+  }
+
+  function addMarketsDestChain_polygon() internal {
+    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
+
+    uint48[] memory chainIds = new uint48[](3);
+    chainIds[0] = 42161;
+    chainIds[1] = 1;
+    chainIds[2] = 1;
+
+    address[] memory markets = new address[](3);
+    markets[0] = cUSDCV3_Arbitrum; //arbitrum cUSDCV3
+    markets[1] = cUSDCV3; //mainnet cUSDCV3
+    markets[2] = cWETHV3; //mainnet cWETHV3
+
+    hc.addMarketsDestChain(chainIds, markets);
   }
 
   function _utils_depositV2_mainnet(uint256 amount, address asset) internal {
@@ -85,6 +172,17 @@ contract HimalayaCompoundUtils is Test {
     IERC20(cTokenAddr).transfer(msg.sender, balanceCTokenAfter - balanceCTokenBefore);
   }
 
+  function _utils_borrowV2_mainnet(uint256 amount, address market) internal {
+    ICToken cToken = ICToken(address(market));
+
+    uint256 status = cToken.borrow(amount);
+    require(status == 0, "borrow failed");
+  }
+
+  function _utils_borrowV3(uint256 amount, address asset, address market) public {
+    ICompoundV3(market).withdraw(asset, amount);
+  }
+
   function _enterCollatMarketV2_mainnet(address asset) private {
     IComptroller comptroller = IComptroller(0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B);
 
@@ -102,7 +200,6 @@ contract HimalayaCompoundUtils is Test {
   }
 
   function _utils_depositV3(
-    // address user,
     uint256 amount,
     address asset,
     address cMarketV3
@@ -112,5 +209,37 @@ contract HimalayaCompoundUtils is Test {
   {
     ICompoundV3(cMarketV3).supply(asset, amount);
     success = true;
+  }
+
+  function _utils_positionIsHealthy(
+    address market,
+    address asset,
+    address debtAsset,
+    uint256 amount,
+    uint256 debtAmount
+  )
+    public
+    returns (bool)
+  {
+    uint256 minAmount = ICompoundV3(market).baseBorrowMin();
+    if (debtAmount < minAmount) {
+      return false;
+    }
+    uint256 RANDOM_USER_PK = 0xA17461917319;
+    address RANDOM_USER = vm.addr(RANDOM_USER_PK);
+
+    deal(asset, RANDOM_USER, amount);
+
+    vm.startPrank(RANDOM_USER);
+    IERC20(asset).approve(market, amount);
+    _utils_depositV3(amount, asset, market);
+
+    try ICompoundV3(market).withdraw(debtAsset, debtAmount) {
+      vm.stopPrank();
+      return true;
+    } catch {
+      vm.stopPrank();
+      return false;
+    }
   }
 }

@@ -5,8 +5,7 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 struct MigrationPermit {
   address owner;
-  uint48 fromChainId;
-  uint48 toChainId;
+  uint48 toChain;
   address fromMarket;
   address toMarket;
   IERC20 assetOrigin;
@@ -26,8 +25,7 @@ library MigrationPermitBase {
     abi.encodePacked(
       "MigrationPermit(",
       "address owner,",
-      "uint48 fromChainId,",
-      "uint48 toChainId,",
+      "uint48 toChain,",
       "address fromMarket,",
       "address toMarket,",
       "IERC20 assetOrigin,",

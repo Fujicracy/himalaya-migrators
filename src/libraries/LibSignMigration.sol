@@ -11,13 +11,12 @@ pragma solidity 0.8.15;
 
 import {MigrationPermitBase, MigrationPermit} from "./MigrationPermitBase.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {HimalayaBase} from "../migrators/HimalayaBase.sol";
+import {HimalayaConnext} from "../migrators/HimalayaConnext.sol";
 
 library LibSignMigration {
   /// @notice Returns the struct type of a permit used for `borrow()` or `withdraw()`.
   function buildPermitStruct(
     address owner,
-    uint48 fromChain,
     uint48 toChain,
     address fromMarket,
     address toMarket,
@@ -34,8 +33,7 @@ library LibSignMigration {
     returns (MigrationPermit memory permit)
   {
     permit.owner = owner;
-    permit.fromChainId = fromChain;
-    permit.toChainId = toChain;
+    permit.toChain = toChain;
     permit.fromMarket = fromMarket;
     permit.toMarket = toMarket;
     permit.assetOrigin = assetOrigin;
@@ -46,7 +44,7 @@ library LibSignMigration {
     permit.debtAmount = debtAmount;
     permit.himalaya = himalaya;
     permit.deadline = uint256(block.timestamp + 0.25 days);
-    permit.nonce = HimalayaBase(himalaya).nonces(owner);
+    permit.nonce = HimalayaConnext(himalaya).nonces(owner);
   }
 
   /// @notice Returns the hash of a permit-withdraw.

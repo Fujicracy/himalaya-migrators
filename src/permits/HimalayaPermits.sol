@@ -10,7 +10,7 @@ pragma solidity 0.8.15;
  */
 
 import {MigrationPermitBase, MigrationPermit} from "../libraries/MigrationPermitBase.sol";
-import {Migration} from "../interfaces/IHimalayaMigrator.sol";
+import {IHimalayaMigrator} from "../interfaces/IHimalayaMigrator.sol";
 import {EIP712} from "./EIP712.sol";
 import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 
@@ -38,7 +38,7 @@ contract HimalayaPermits is EIP712 {
 
   /// @dev TODO docs.
   function _checkMigrationPermit(
-    Migration memory migration,
+    IHimalayaMigrator.Migration memory migration,
     uint8 v,
     bytes32 r,
     bytes32 s
@@ -55,13 +55,12 @@ contract HimalayaPermits is EIP712 {
 
   /// Internal Functions
 
-  function _buildMigrationPermit(Migration memory migration)
+  function _buildMigrationPermit(IHimalayaMigrator.Migration memory migration)
     private
     returns (MigrationPermit memory permit)
   {
     permit.owner = migration.owner;
-    permit.fromChainId = migration.fromChainId;
-    permit.toChainId = uint48(block.chainid); // should match: migration.toChainId
+    permit.toChain = uint48(block.chainid); // should match: migration.toChain
     permit.fromMarket = migration.fromMarket;
     permit.toMarket = migration.toMarket;
     permit.assetOrigin = migration.assetOrigin;

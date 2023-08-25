@@ -9,20 +9,20 @@ pragma solidity 0.8.15;
  * @notice This contract allows Fuji Himalaya to receive calls from connext and handle migrations.
  */
 
-import {IHimalayaMigrator, Migration} from "../interfaces/IHimalayaMigrator.sol";
-import {IHimalayaBase} from "../interfaces/IHimalayaBase.sol";
+import {IHimalayaMigrator} from "../interfaces/IHimalayaMigrator.sol";
+import {IHimalayaConnext} from "../interfaces/IHimalayaConnext.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IConnext, IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
 import {HimalayaPermits} from "../permits/HimalayaPermits.sol";
 
-contract HimalayaBase is IXReceiver, IHimalayaBase, HimalayaPermits {
+contract HimalayaConnext is HimalayaPermits, IXReceiver, IHimalayaConnext {
   using SafeERC20 for IERC20;
 
   IConnext public immutable connext;
 
-  //chainId => migrator
-  mapping(uint256 => address) public migrators;
+  //chainId => himalayaConnexts
+  mapping(uint256 => address) public himalayaConnexts;
 
   //chainId => domainIdConnext
   mapping(uint256 => uint32) public domainIds;
@@ -38,40 +38,31 @@ contract HimalayaBase is IXReceiver, IHimalayaBase, HimalayaPermits {
     domainIds[42161] = 1634886255;
   }
 
+  // * @param transferId the unique identifier of the crosschain transfer
+  // * @param amount the amount of transferring asset, after slippage, the recipient address receives
+  // * @param asset the asset being transferred
+  // * @param originSender the address of the contract or EOA that called xcall on the origin chain
+  // * @param originDomain the origin domain identifier according Connext nomenclature
   /**
    * @notice Called by Connext on the destination chain.
    *
-   * @param transferId the unique identifier of the crosschain transfer
-   * @param amount the amount of transferring asset, after slippage, the recipient address receives
-   * @param asset the asset being transferred
    * @param callData the calldata that will get decoded and executed, see "Requirements"
    *
    */
   function xReceive(
-    bytes32 transferId,
-    uint256 amount,
-    address asset,
-    address, /*originSender*/
-    uint32, /*originDomain*/
+    bytes32, /* transferId */
+    uint256, /* amount */
+    address, /* asset */
+    address, /* originSender */
+    uint32, /* originDomain */
     bytes memory callData
   )
     external
     returns (bytes memory)
   {
     //@dev asset of migration struct is the address on origin chain. We want the asset address on the destination chain
-    (Migration memory migration, uint8 v, bytes32 r, bytes32 s) =
-      abi.decode(callData, (Migration, uint8, bytes32, bytes32));
-
-    //TODO check params
-    if (asset != address(migration.assetDest)) {
-      //TODO cannot revert, but we need to handle this malicious attempt.
-    }
-
-    // Check signed Migration permit
-    _checkMigrationPermit(migration, v, r, s);
-
-    ///@dev Since signature has already been check we can replace amount with received amount considering fees and slippage by Connext
-    migration.amount = amount;
+    (IHimalayaMigrator.Migration memory migration, uint8 v, bytes32 r, bytes32 s) =
+      abi.decode(callData, (IHimalayaMigrator.Migration, uint8, bytes32, bytes32));
 
     //Approve IHimalayaMigrator to pull funds
     migration.assetDest.safeApprove(migration.himalaya, migration.amount);
@@ -80,40 +71,47 @@ contract HimalayaBase is IXReceiver, IHimalayaBase, HimalayaPermits {
     //TODO this next call has to be wrapped in a try-catch
     IHimalayaMigrator(migration.himalaya).receiveXMigration(callData);
 
-    return abi.encode(transferId);
+    return "";
   }
 
-  function xCall(Migration memory migration) external returns (bytes32 transferId) {
+  function xCall(IHimalayaMigrator.Migration memory migration)
+    external
+    returns (bytes32 transferId)
+  {
+    //TODO decide on token is not "bridgeable" by connext
+
     //Pull funds from IHimalayaMigrator
     migration.assetOrigin.safeTransferFrom(msg.sender, address(this), migration.amount);
 
     //Approve connext to pull funds
     migration.assetOrigin.safeApprove(address(connext), migration.amount);
 
-    //TODO
+    //TODO check migration struct parameters are secure and correct
     transferId = connext.xcall(
       // _destination: Domain ID of the destination chain
-      domainIds[migration.toChainId],
+      domainIds[migration.toChain],
       // _to: address of the target contract
       migration.himalaya,
       // _asset: address of the token contract
       address(migration.assetOrigin),
       // _delegate: address that has rights to update the original slippage tolerance
       // by calling Connext's forceUpdateSlippage function
-      migration.himalaya, //TODO check this parameter
+      migration.himalaya,
       // _amount: amount of tokens to transfer
       migration.amount,
       // _slippage: can be anything between 0-10000 because
       // the maximum amount of slippage the user will accept in BPS, 30 == 0.3%
-      30, //TODO implement this
-      // _callData: empty because we're only sending funds
+      migration.slippage,
+      // _callData: data to be decoded and executed on the destination chain
       abi.encode(migration)
     );
   }
 
-  function addMigrator(uint32 domainId, address migrator) external {
+  function addHimalayaConnext(uint32 domainId, address himalayaConnext) external {
     //TODO define modifier
-    require(migrators[domainId] == address(0), "HimalayaMigrator: migrator already exists");
-    migrators[domainId] = migrator;
+    require(
+      himalayaConnexts[domainId] == address(0), "HimalayaConnext: himalayaConnext already exists"
+    );
+    himalayaConnexts[domainId] = himalayaConnext;
   }
 }
