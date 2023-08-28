@@ -25,7 +25,6 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
   error HimalayaConnext__setDomainIds_invalidInput();
   error HimalayaConnext__setHimalayaConnext_invalidInput();
   error HimalayaConnext__setMigrator_invalidInput();
-  error HimalayaConnext__setDomainIds_invalidInput();
 
   /// @dev events
   event SetHimalayaConnext(uint48 chainId, address himalayaConnext, bool active);
