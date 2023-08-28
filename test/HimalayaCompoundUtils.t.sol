@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import {console} from "forge-std/console.sol";
 import {CompoundV2} from "../src/integrations/CompoundV2.sol";
 import {CompoundV3} from "../src/integrations/CompoundV3.sol";
 import {ICETH} from "@fuji-v2/src/interfaces/compoundV2/ICETH.sol";
@@ -138,10 +139,9 @@ contract HimalayaCompoundUtils is Test {
   )
     internal
     view
-    returns (uint8 v, bytes32 r, bytes32 s)
+    returns (IHimalayaMigrator.Migration memory permit, uint8 v, bytes32 r, bytes32 s)
   {
-    IHimalayaMigrator.Migration memory permit =
-      LibSignMigration.prepareMigrationStructForSigning(migration);
+    permit = LibSignMigration.prepareMigrationStructForSigning(migration);
     bytes32 structHash = LibSignMigration.getStructHashMigration(permit);
     bytes32 digest = LibSignMigration.getHashTypedDataV4Digest(
       HimalayaPermits(migration.himalaya).DOMAIN_SEPARATOR(), structHash
