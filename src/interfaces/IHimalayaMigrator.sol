@@ -25,11 +25,19 @@ interface IHimalayaMigrator {
     IERC20 debtAssetDest; // adopted ERC20 token that represent origin debt asset at destination chain
     uint256 debtAmount; // amount of debt being migrated
     address himalaya; //address of IHimalayaMigrator on destination chain
-    uint256 deadline; //period to execute this migration
-    uint256 slippage; //slippage tolerance in BPS
+    uint48 slippage; //slippage tolerance in BPS
+    uint128 deadline; //period to execute this migration
+    uint128 nonce; // unique consecutive number for migration; read from {HimalayaPermits.nonces(address)}
   }
 
-  function beginXMigration(Migration memory migration) external returns (bytes32 transferId);
+  function beginXMigration(
+    Migration memory migration,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  )
+    external
+    returns (bytes32 transferId);
 
   function receiveXMigration(bytes memory data) external returns (bool);
 }

@@ -18,13 +18,21 @@ interface IHimalayaConnext is IXReceiver {
    * @notice Begins a cross-chain migration of a position from origin chain to destination chain.
    *
    * @param migration Migration struct containing all necessary information to execute a cross-chain migration.
+   * @param v signature value
+   * @param r signature value
+   * @param s signature value
    *
    * @return transferId Unique identifier for this migration.
    * @dev Requirements:
    * - `msg.sender` must be HimalayaMigrator contract.
    * - `msg.sender` must be an allowed migrator
    */
-  function xCall(IHimalayaMigrator.Migration memory migration)
+  function xCall(
+    IHimalayaMigrator.Migration memory migration,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  )
     external
     returns (bytes32 transferId);
 
