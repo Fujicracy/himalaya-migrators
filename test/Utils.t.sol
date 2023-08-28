@@ -63,13 +63,6 @@ contract Utils is Test, HimalayaCompoundUtils, ConnextUtils {
     timelock = TimelockController(payable(chief.timelock()));
   }
 
-  function _callWithTimelock(address target, bytes memory callData) internal {
-    timelock.schedule(target, 0, callData, 0x00, 0x00, 1.5 days);
-    vm.warp(block.timestamp + 2 days);
-    timelock.execute(target, 0, callData, 0x00, 0x00);
-    rewind(2 days);
-  }
-
   function addMarkets_mainnet() internal {
     address[] memory marketsV2 = new address[](3);
     marketsV2[0] = address(cETHV2);
@@ -89,13 +82,11 @@ contract Utils is Test, HimalayaCompoundUtils, ConnextUtils {
     isMarketActiveV3[0] = true;
     isMarketActiveV3[1] = true;
 
-    bytes memory executionCall =
-      abi.encodeWithSelector(HimalayaCompound.setMarketsV2.selector, marketsV2, isMarketActiveV2);
-    _callWithTimelock(address(himalayaCompound), executionCall);
+    vm.prank(address(timelock));
+    HimalayaCompound(payable(address(himalayaCompound))).setMarketsV2(marketsV2, isMarketActiveV2);
 
-    executionCall =
-      abi.encodeWithSelector(HimalayaCompound.setMarketsV3.selector, marketsV3, isMarketActiveV3);
-    _callWithTimelock(address(himalayaCompound), executionCall);
+    vm.prank(address(timelock));
+    HimalayaCompound(payable(address(himalayaCompound))).setMarketsV3(marketsV3, isMarketActiveV3);
   }
 
   function addMarkets_polygon() internal {
@@ -105,9 +96,8 @@ contract Utils is Test, HimalayaCompoundUtils, ConnextUtils {
     bool[] memory isMarketActiveV3 = new bool[](1);
     isMarketActiveV3[0] = true;
 
-    bytes memory executionCall =
-      abi.encodeWithSelector(HimalayaCompound.setMarketsV3.selector, marketsV3, isMarketActiveV3);
-    _callWithTimelock(address(himalayaCompound), executionCall);
+    vm.prank(address(timelock));
+    HimalayaCompound(payable(address(himalayaCompound))).setMarketsV3(marketsV3, isMarketActiveV3);
   }
 
   function addMarkets_arbitrum() internal {
@@ -117,9 +107,8 @@ contract Utils is Test, HimalayaCompoundUtils, ConnextUtils {
     bool[] memory isMarketActiveV3 = new bool[](1);
     isMarketActiveV3[0] = true;
 
-    bytes memory executionCall =
-      abi.encodeWithSelector(HimalayaCompound.setMarketsV3.selector, marketsV3, isMarketActiveV3);
-    _callWithTimelock(address(himalayaCompound), executionCall);
+    vm.prank(address(timelock));
+    HimalayaCompound(payable(address(himalayaCompound))).setMarketsV3(marketsV3, isMarketActiveV3);
   }
 
   function addMarketsDestChain_mainnet() internal {
@@ -135,10 +124,10 @@ contract Utils is Test, HimalayaCompoundUtils, ConnextUtils {
     isMarketActive[0] = true;
     isMarketActive[1] = true;
 
-    bytes memory executionCall = abi.encodeWithSelector(
-      HimalayaCompound.setMarketsDestChain.selector, chainIds, markets, isMarketActive
+    vm.prank(address(timelock));
+    HimalayaCompound(payable(address(himalayaCompound))).setMarketsDestChain(
+      chainIds, markets, isMarketActive
     );
-    _callWithTimelock(address(himalayaCompound), executionCall);
   }
 
   function addMarketsDestChain_arbitrum() internal {
@@ -157,10 +146,10 @@ contract Utils is Test, HimalayaCompoundUtils, ConnextUtils {
     isMarketActive[1] = true;
     isMarketActive[2] = true;
 
-    bytes memory executionCall = abi.encodeWithSelector(
-      HimalayaCompound.setMarketsDestChain.selector, chainIds, markets, isMarketActive
+    vm.prank(address(timelock));
+    HimalayaCompound(payable(address(himalayaCompound))).setMarketsDestChain(
+      chainIds, markets, isMarketActive
     );
-    _callWithTimelock(address(himalayaCompound), executionCall);
   }
 
   function addMarketsDestChain_polygon() internal {
@@ -179,9 +168,9 @@ contract Utils is Test, HimalayaCompoundUtils, ConnextUtils {
     isMarketActive[1] = true;
     isMarketActive[2] = true;
 
-    bytes memory executionCall = abi.encodeWithSelector(
-      HimalayaCompound.setMarketsDestChain.selector, chainIds, markets, isMarketActive
+    vm.prank(address(timelock));
+    HimalayaCompound(payable(address(himalayaCompound))).setMarketsDestChain(
+      chainIds, markets, isMarketActive
     );
-    _callWithTimelock(address(himalayaCompound), executionCall);
   }
 }

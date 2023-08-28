@@ -34,12 +34,11 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
     himalayaConnext = new HimalayaConnext(CONNEXT_POLYGON, address(chief));
     himalayaCompound = new HimalayaCompound(address(himalayaConnext), address(chief));
 
-    bytes memory executionCall =
-      abi.encodeWithSelector(IHimalayaConnext.setMigrator.selector, address(himalayaCompound), true);
-    _callWithTimelock(address(himalayaConnext), executionCall);
+    vm.prank(address(timelock));
+    himalayaConnext.setMigrator(address(himalayaCompound), true);
 
     uint32[] memory domainIds = new uint32[](3);
-    uint32[] memory ids = new uint32[](3);
+    uint48[] memory ids = new uint48[](3);
     //mainnet
     ids[0] = 1;
     domainIds[0] = 6648936;
@@ -49,8 +48,9 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
     //arbitrum
     ids[2] = 42161;
     domainIds[2] = 1634886255;
-    executionCall = abi.encodeWithSelector(IHimalayaConnext.setDomainIds.selector, ids, domainIds);
-    _callWithTimelock(address(himalayaConnext), executionCall);
+
+    vm.prank(address(timelock));
+    himalayaConnext.setDomainIds(ids, domainIds);
 
     setLabels();
     setLabelsCompound();
@@ -203,7 +203,6 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
   )
     public
   {
-    vm.assume(collateralAmount > 1e14);
     deal(WETH_Polygon, ALICE, AMOUNT_SUPPLY_WETH);
     assertEq(IERC20(WETH_Polygon).balanceOf(ALICE), AMOUNT_SUPPLY_WETH);
 
@@ -250,17 +249,14 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
 
     uint256 userDepositAmount = compoundV3.getDepositBalanceV3(ALICE, WETH_Polygon, cUSDCV3_Polygon);
     uint256 userDebtAmount = compoundV3.getBorrowBalanceV3(ALICE, USDC_Polygon, cUSDCV3_Polygon);
-    //case 1: user tries to withdraw/payback more than they have/owe
-    if (collateralAmount > userDepositAmount || debtAmount > userDebtAmount) {
-      vm.expectRevert(
-        HimalayaCompound.HimalayaCompound__handleOutboundFromV3_invalidAmount.selector
-      );
+    //case 1: no amounts to migrate
+    if (collateralAmount == 0) {
+      vm.expectRevert(HimalayaCompound.HimalayaCompound__beginXMigration_invalidAmount.selector);
       vm.prank(ALICE);
       himalayaCompound.beginXMigration(migration);
     }
-    //case 2: no amounts to migrate
-    else if (collateralAmount == 0 && debtAmount == 0) {
-      // TODO: this case is never reached because vm.assumes `collateralAmount` > 1e14
+    //case 2: user tries to withdraw/payback more than they have/owe
+    else if (collateralAmount > userDepositAmount || debtAmount > userDebtAmount) {
       vm.expectRevert(
         HimalayaCompound.HimalayaCompound__handleOutboundFromV3_invalidAmount.selector
       );
@@ -281,6 +277,7 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
       vm.prank(ALICE);
       himalayaCompound.beginXMigration(migration);
     } else {
+      //case 4: user migrates
       vm.prank(ALICE);
       himalayaCompound.beginXMigration(migration);
       assertEq(IERC20(WETH_Polygon).balanceOf(address(himalayaCompound)), 0);
