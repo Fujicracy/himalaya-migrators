@@ -26,10 +26,15 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, SystemAc
   error HimalayaCompound__handleOutboundFromV2_invalidAmount();
   error HimalayaCompound__handleOutboundFromV3_invalidAmount();
   error HimalayaCompound__setMarketsDestChain_invalidInput();
+  error HimalayaCompound__setMarkets_invalidInput();
   error HimalayaCompound__setMarketsV2_invalidInput();
   error HimalayaCompound__setMarketsV3_invalidInput();
   error HimalayaCompound__onlyHimalayaConnext_notAuthorized();
   error HimalayaCompound__beginXMigration_invalidAmount();
+
+  /// @dev events
+  event SetMarketsDestChain(uint48[] chainIds, address[] markets, bool[] isMarketActive);
+  event SetMarkets(address[] markets, bool[] isMarketActive);
 
   //marketAddress => isMarket
   mapping(address => bool) public isMarketV2;
@@ -96,6 +101,12 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, SystemAc
     return true;
   }
 
+  function _setMarketsChecks(uint48 chainId, address market) internal pure {
+    if (chainId == 0 || market == address(0)) {
+      revert HimalayaCompound__setMarkets_invalidInput();
+    }
+  }
+
   function setMarketsDestChain(
     uint48[] memory chainIds,
     address[] memory markets,
@@ -109,8 +120,10 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, SystemAc
     }
 
     for (uint256 i = 0; i < chainIds.length; i++) {
+      _setMarketsChecks(chainIds[i], markets[i]);
       isMarketOnDestChain[chainIds[i]][markets[i]] = isMarketActive[i];
     }
+    emit SetMarketsDestChain(chainIds, markets, isMarketActive);
   }
 
   function setMarketsV2(
@@ -124,8 +137,10 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, SystemAc
       revert HimalayaCompound__setMarketsV2_invalidInput();
     }
     for (uint256 i = 0; i < markets.length; i++) {
+      _setMarketsChecks(1, markets[i]);
       isMarketV2[markets[i]] = isMarketActive[i];
     }
+    emit SetMarkets(markets, isMarketActive);
   }
 
   function setMarketsV3(
@@ -139,8 +154,10 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, SystemAc
       revert HimalayaCompound__setMarketsV3_invalidInput();
     }
     for (uint256 i = 0; i < markets.length; i++) {
+      _setMarketsChecks(1, markets[i]);
       isMarketV3[markets[i]] = isMarketActive[i];
     }
+    emit SetMarkets(markets, isMarketActive);
   }
 
   function _handleOutboundFromV2(Migration memory migration) internal returns (bool) {
