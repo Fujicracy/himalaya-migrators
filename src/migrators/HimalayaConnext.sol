@@ -14,10 +14,9 @@ import {IHimalayaConnext} from "../interfaces/IHimalayaConnext.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IConnext, IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
-import {HimalayaPermits} from "../permits/HimalayaPermits.sol";
 import {SystemAccessControl} from "@fuji-v2/src/access/SystemAccessControl.sol";
 
-contract HimalayaConnext is HimalayaPermits, IXReceiver, IHimalayaConnext, SystemAccessControl {
+contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
   using SafeERC20 for IERC20;
 
   //@dev custom error
@@ -47,20 +46,20 @@ contract HimalayaConnext is HimalayaPermits, IXReceiver, IHimalayaConnext, Syste
     __SystemAccessControl_init(chief);
   }
 
-  // * @param transferId the unique identifier of the crosschain transfer
-  // * @param amount the amount of transferring asset, after slippage, the recipient address receives
   // * @param asset the asset being transferred
   // * @param originSender the address of the contract or EOA that called xcall on the origin chain
   // * @param originDomain the origin domain identifier according Connext nomenclature
   /**
    * @notice Called by Connext on the destination chain.
    *
+   * @param transferId the unique identifier of the crosschain transfer
+   * @param amount the amount of transferring asset, after slippage, the recipient address receives*
    * @param callData the calldata that will get decoded and executed, see "Requirements"
    *
    */
   function xReceive(
     bytes32 transferId,
-    uint256, /* amount */
+    uint256 amount,
     address, /* asset */
     address, /* originSender */
     uint32, /* originDomain */
@@ -73,10 +72,11 @@ contract HimalayaConnext is HimalayaPermits, IXReceiver, IHimalayaConnext, Syste
     //NOTE ensure checking the slipped amount and replace in migration struct,
     // because 99% of the time `amount` != Migration.amount
     //Approve IHimalayaMigrator to pull funds
-    (IHimalayaMigrator.Migration memory migration, uint8 v, bytes32 r, bytes32 s) =
+
+    (IHimalayaMigrator.Migration memory migration,,,) =
       abi.decode(callData, (IHimalayaMigrator.Migration, uint8, bytes32, bytes32));
 
-    migration.assetDest.safeApprove(migration.himalaya, migration.amount);
+    migration.assetDest.safeApprove(migration.himalaya, amount);
 
     //Handle inbound
     //TODO this call should be wrapped in a try-catch.
@@ -87,7 +87,12 @@ contract HimalayaConnext is HimalayaPermits, IXReceiver, IHimalayaConnext, Syste
     return abi.encode(transferId);
   }
 
-  function xCall(IHimalayaMigrator.Migration memory migration)
+  function xCall(
+    IHimalayaMigrator.Migration memory migration,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  )
     external
     onlyAllowedMigrator
     returns (bytes32 transferId)
@@ -117,7 +122,7 @@ contract HimalayaConnext is HimalayaPermits, IXReceiver, IHimalayaConnext, Syste
       // the maximum amount of slippage the user will accept in BPS, 30 == 0.3%
       migration.slippage,
       // _callData: data to be decoded and executed on the destination chain
-      abi.encode(migration)
+      abi.encode(migration, v, r, s)
     );
   }
 

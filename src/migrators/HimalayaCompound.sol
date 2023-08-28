@@ -15,9 +15,16 @@ import {CompoundV3} from "../integrations/CompoundV3.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IHimalayaConnext} from "../interfaces/IHimalayaConnext.sol";
+import {HimalayaPermits} from "../permits/HimalayaPermits.sol";
 import {SystemAccessControl} from "@fuji-v2/src/access/SystemAccessControl.sol";
 
-contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, SystemAccessControl {
+contract HimalayaCompound is
+  IHimalayaMigrator,
+  HimalayaPermits,
+  CompoundV2,
+  CompoundV3,
+  SystemAccessControl
+{
   using SafeERC20 for IERC20;
 
   //@dev custom error
@@ -52,7 +59,15 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, SystemAc
     __SystemAccessControl_init(chief);
   }
 
-  function beginXMigration(Migration memory migration) external returns (bytes32 transferId) {
+  function beginXMigration(
+    Migration memory migration,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  )
+    external
+    returns (bytes32 transferId)
+  {
     if (!isMarketOnDestChain[migration.toChain][migration.toMarket]) {
       revert HimalayaCompound__beginXMigration_marketNotSupported();
     }
@@ -71,18 +86,21 @@ contract HimalayaCompound is IHimalayaMigrator, CompoundV2, CompoundV3, SystemAc
     //Approve himalayaConnext to pull funds
     migration.assetOrigin.safeIncreaseAllowance(address(himalayaConnext), migration.amount);
 
-    transferId = himalayaConnext.xCall(migration);
+    transferId = himalayaConnext.xCall(migration, v, r, s);
   }
 
   function receiveXMigration(bytes memory data) external onlyHimalayaConnext returns (bool) {
-    Migration memory migration = abi.decode(data, (Migration));
+    (Migration memory migration, uint8 v, bytes32 r, bytes32 s) =
+      abi.decode(data, (Migration, uint8, bytes32, bytes32));
+
+    //Pull funds from HimalayaConnext
+    SafeERC20.safeTransferFrom(migration.assetDest, msg.sender, address(this), migration.amount);
 
     if (!isMarketV3[migration.toMarket]) {
       revert HimalayaCompound__receiveXMigration_marketNotSupported();
     }
 
-    //Pull funds from HimalayaConnext
-    SafeERC20.safeTransferFrom(migration.assetDest, msg.sender, address(this), migration.amount);
+    _checkMigrationPermit(migration, v, r, s);
 
     _handleInboundToV3(
       migration.owner,
