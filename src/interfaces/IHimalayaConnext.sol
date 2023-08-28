@@ -50,5 +50,5 @@ interface IHimalayaConnext is IXReceiver {
    * @dev Requirements:
    * - `msg.sender` must be timelock.
    */
-  function setDomainIds(uint256[] memory chainIds_, uint32[] memory domainIds) external;
+  function setDomainIds(uint48[] memory chainIds_, uint32[] memory domainIds) external;
 }
