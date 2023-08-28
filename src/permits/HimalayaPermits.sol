@@ -35,12 +35,35 @@ contract HimalayaPermits is EIP712 {
     return _nonces[owner];
   }
 
-  /// @dev TODO docs
+  /**
+   * @notice Returns the domain hash for this contract.
+   */
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparatorV4();
   }
 
-  /// @dev TODO docs.
+  /**
+   * @notice Returns the digest to be signed.
+   *
+   * @param permit complete Migration struct
+   */
+  function getHashTypedDataV4Digest(IHimalayaMigrator.Migration memory permit)
+    external
+    view
+    returns (bytes32)
+  {
+    bytes32 structHash = _getStructHashMigration(permit);
+    return _hashTypedDataV4(structHash);
+  }
+
+  /**
+   * @dev Validates a migration struct against deadline and signatures.
+   *
+   * @param migration struct
+   * @param v signature value
+   * @param r signature value
+   * @param s signature value
+   */
   function _checkMigrationPermit(
     IHimalayaMigrator.Migration memory migration,
     uint8 v,
@@ -79,7 +102,11 @@ contract HimalayaPermits is EIP712 {
     permit.nonce = _useNonce(migration.owner); // should match: migration.nonce
   }
 
-  function _getStructHashMigration(IHimalayaMigrator.Migration memory permit) private pure returns (bytes32) {
+  function _getStructHashMigration(IHimalayaMigrator.Migration memory permit)
+    private
+    pure
+    returns (bytes32)
+  {
     return keccak256(abi.encode(MigrationPermitBase.MIGRATION_TYPEHASH, permit));
   }
 
