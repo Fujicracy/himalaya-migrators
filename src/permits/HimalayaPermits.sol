@@ -9,7 +9,7 @@ pragma solidity 0.8.15;
  * @notice
  */
 
-import {MigrationPermitBase, MigrationPermit} from "../libraries/MigrationPermitBase.sol";
+import {MigrationPermitBase} from "../libraries/MigrationPermitBase.sol";
 import {IHimalayaMigrator} from "../interfaces/IHimalayaMigrator.sol";
 import {EIP712} from "./EIP712.sol";
 import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
@@ -19,19 +19,23 @@ contract HimalayaPermits is EIP712 {
   error HimalayaPermits__expiredDeadline();
   error HimalayaPermits__invalidSignature();
 
-  mapping(address => uint256) private _nonces;
+  mapping(address => uint128) private _nonces;
 
-  /// @dev Reserve a slot as recommended in OZ {draft-ERC20Permit}.
+  /// @dev Reserve a slot as recommended in OZ.
   // solhint-disable-next-line var-name-mixedcase
   bytes32 private _PERMIT_TYPEHASH_DEPRECATED_SLOT;
 
-  /// @dev TODO docs
-  function nonces(address owner) public view returns (uint256) {
+  /**
+   * @notice Returns the curent used nonces for permits of `owner`.
+   * Based on OZ {IERC20Permit-nonces}.
+   *
+   * @param owner address to check nonces
+   */
+  function nonces(address owner) public view returns (uint128) {
     return _nonces[owner];
   }
 
   /// @dev TODO docs
-  // solhint-disable-next-line func-name-mixedcase
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparatorV4();
   }
@@ -47,7 +51,7 @@ contract HimalayaPermits is EIP712 {
   {
     _checkDeadline(migration.deadline);
 
-    MigrationPermit memory permit = _buildMigrationPermit(migration);
+    IHimalayaMigrator.Migration memory permit = _buildMigration(migration);
     bytes32 structHash = _getStructHashMigration(permit);
 
     _checkSigner(structHash, migration.owner, v, r, s);
@@ -55,9 +59,9 @@ contract HimalayaPermits is EIP712 {
 
   /// Internal Functions
 
-  function _buildMigrationPermit(IHimalayaMigrator.Migration memory migration)
+  function _buildMigration(IHimalayaMigrator.Migration memory migration)
     private
-    returns (MigrationPermit memory permit)
+    returns (IHimalayaMigrator.Migration memory permit)
   {
     permit.owner = migration.owner;
     permit.toChain = uint48(block.chainid); // should match: migration.toChain
@@ -70,12 +74,13 @@ contract HimalayaPermits is EIP712 {
     permit.debtAssetDest = migration.debtAssetDest;
     permit.debtAmount = migration.debtAmount;
     permit.himalaya = migration.himalaya;
+    permit.slippage = migration.slippage;
     permit.deadline = migration.deadline;
-    permit.nonce = _useNonce(migration.owner);
+    permit.nonce = _useNonce(migration.owner); // should match: migration.nonce
   }
 
-  function _getStructHashMigration(MigrationPermit memory permit) private pure returns (bytes32) {
-    return keccak256(abi.encode(MigrationPermitBase.PERMIT_MIGRATION_TYPEHASH, permit));
+  function _getStructHashMigration(IHimalayaMigrator.Migration memory permit) private pure returns (bytes32) {
+    return keccak256(abi.encode(MigrationPermitBase.MIGRATION_TYPEHASH, permit));
   }
 
   /**
@@ -84,7 +89,7 @@ contract HimalayaPermits is EIP712 {
    *
    * @param owner address who uses a permit
    */
-  function _useNonce(address owner) internal returns (uint256 current) {
+  function _useNonce(address owner) internal returns (uint128 current) {
     current = _nonces[owner];
     unchecked {
       _nonces[owner] += 1;

@@ -9,47 +9,37 @@ pragma solidity 0.8.15;
  * @notice Helper library for permit signing of lending-borrowing position migrations.
  */
 
-import {MigrationPermitBase, MigrationPermit} from "./MigrationPermitBase.sol";
+import {IHimalayaMigrator} from "../interfaces/IHimalayaMigrator.sol";
+import {MigrationPermitBase} from "./MigrationPermitBase.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {HimalayaConnext} from "../migrators/HimalayaConnext.sol";
+import {HimalayaPermits} from "../permits/HimalayaPermits.sol";
 
 library LibSignMigration {
   /// @notice Returns the struct type of a permit used for `borrow()` or `withdraw()`.
-  function buildPermitStruct(
-    address owner,
-    uint48 toChain,
-    address fromMarket,
-    address toMarket,
-    IERC20 assetOrigin,
-    IERC20 assetDest,
-    uint256 amount,
-    IERC20 debtAssetOrigin,
-    IERC20 debtAssetDest,
-    uint256 debtAmount,
-    address himalaya
-  )
+  function prepareMigrationStructForSigning(IHimalayaMigrator.Migration memory migration)
     public
     view
-    returns (MigrationPermit memory permit)
+    returns (IHimalayaMigrator.Migration memory permit)
   {
-    permit.owner = owner;
-    permit.toChain = toChain;
-    permit.fromMarket = fromMarket;
-    permit.toMarket = toMarket;
-    permit.assetOrigin = assetOrigin;
-    permit.assetDest = assetDest;
-    permit.amount = amount;
-    permit.debtAssetOrigin = debtAssetOrigin;
-    permit.debtAssetDest = debtAssetDest;
-    permit.debtAmount = debtAmount;
-    permit.himalaya = himalaya;
-    permit.deadline = uint256(block.timestamp + 0.25 days);
-    permit.nonce = HimalayaConnext(himalaya).nonces(owner);
+    permit.owner = migration.owner;
+    permit.toChain = migration.toChain;
+    permit.fromMarket = migration.fromMarket;
+    permit.toMarket = migration.toMarket;
+    permit.assetOrigin = migration.assetOrigin;
+    permit.assetDest = migration.assetDest;
+    permit.amount = migration.amount;
+    permit.debtAssetOrigin = migration.debtAssetOrigin;
+    permit.debtAssetDest = migration.debtAssetDest;
+    permit.debtAmount = migration.debtAmount;
+    permit.himalaya = migration.himalaya;
+    permit.slippage = migration.slippage;
+    permit.deadline = uint128(block.timestamp + 12 hours);
+    permit.nonce = HimalayaPermits(migration.himalaya).nonces(migration.owner);
   }
 
-  /// @notice Returns the hash of a permit-withdraw.
-  function getStructHashMigration(MigrationPermit memory permit) public pure returns (bytes32) {
-    return keccak256(abi.encode(MigrationPermitBase.PERMIT_MIGRATION_TYPEHASH, permit));
+  /// @notice Returns the structhash of a permit-withdraw.
+  function getStructHashMigration(IHimalayaMigrator.Migration memory permit) public pure returns (bytes32) {
+    return keccak256(abi.encode(MigrationPermitBase.MIGRATION_TYPEHASH, permit));
   }
 
   /// @notice Returns the digest.
