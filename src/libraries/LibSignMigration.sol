@@ -28,6 +28,7 @@ library LibSignMigration {
     permit.assetOrigin = migration.assetOrigin;
     permit.assetDest = migration.assetDest;
     permit.amount = migration.amount;
+    permit.fromDebtMarket = migration.fromDebtMarket;
     permit.debtAssetOrigin = migration.debtAssetOrigin;
     permit.debtAssetDest = migration.debtAssetDest;
     permit.debtAmount = migration.debtAmount;
