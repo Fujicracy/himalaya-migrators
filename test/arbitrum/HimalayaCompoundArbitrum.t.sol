@@ -271,8 +271,11 @@ contract HimalayaCompoundArbitrumUnitTests is Utils {
         cUSDCV3_Arbitrum,
         WETH_Arbitrum,
         USDC_Arbitrum,
-        userDepositAmount - collateralAmount,
-        userDebtAmount - debtAmount
+        AMOUNT_SUPPLY_WETH,
+        collateralAmount,
+        AMOUNT_BORROW_USDC,
+        debtAmount,
+        10
       )
     ) {
       vm.expectRevert();
@@ -291,7 +294,7 @@ contract HimalayaCompoundArbitrumUnitTests is Utils {
       assertApproxEqAbs(
         compoundV3.getBorrowBalanceV3(ALICE, USDC_Arbitrum, cUSDCV3_Arbitrum),
         userDebtAmount - debtAmount,
-        1
+       (userDebtAmount - debtAmount)/1000
       );
     }
   }

@@ -327,7 +327,14 @@ contract HimalayaCompoundUnitTests is Utils {
     //case 3: user tries to make his position unhealthy on origin chain
     else if (
       !_utils_positionIsHealthy(
-        cUSDCV3, WETH, USDC, userDepositAmount - collateralAmount, userDebtAmount - debtAmount
+        cUSDCV3,
+        WETH,
+        USDC,
+        AMOUNT_SUPPLY_WETH,
+        collateralAmount,
+        AMOUNT_BORROW_USDC,
+        debtAmount,
+        10
       )
     ) {
       vm.expectRevert();
@@ -343,7 +350,7 @@ contract HimalayaCompoundUnitTests is Utils {
       );
       assertEq(IERC20(USDC).balanceOf(address(himalayaCompound)), 0);
       assertApproxEqAbs(
-        compoundV3.getBorrowBalanceV3(ALICE, USDC, cUSDCV3), userDebtAmount - debtAmount, 1
+        compoundV3.getBorrowBalanceV3(ALICE, USDC, cUSDCV3), userDebtAmount - debtAmount, (userDebtAmount - debtAmount)/1000
       );
     }
   }

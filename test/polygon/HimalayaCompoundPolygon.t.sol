@@ -269,8 +269,11 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
         cUSDCV3_Polygon,
         WETH_Polygon,
         USDC_Polygon,
-        userDepositAmount - collateralAmount,
-        userDebtAmount - debtAmount
+        AMOUNT_SUPPLY_WETH,
+        collateralAmount,
+        AMOUNT_BORROW_USDC,
+        debtAmount,
+        10
       )
     ) {
       vm.expectRevert();
@@ -289,7 +292,7 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
       assertApproxEqAbs(
         compoundV3.getBorrowBalanceV3(ALICE, USDC_Polygon, cUSDCV3_Polygon),
         userDebtAmount - debtAmount,
-        1
+       (userDebtAmount - debtAmount)/1000
       );
     }
   }

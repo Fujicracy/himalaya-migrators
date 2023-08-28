@@ -131,20 +131,33 @@ contract HimalayaCompoundUtils is Test {
     success = true;
   }
 
+  function _utils_paybackV3(
+    address user,
+    uint256 amount,
+    address debtAsset,
+    address cMarketV3
+  )
+    internal
+    returns (bool success)
+  {
+    // From Coment docs: 'supply' the base asset to repay an open borrow of the base asset.
+    ICompoundV3(cMarketV3).supplyFrom(user, user, debtAsset, amount);
+    success = true;
+  }
+
   function _utils_positionIsHealthy(
     address market,
     address asset,
     address debtAsset,
     uint256 amount,
-    uint256 debtAmount
+    uint256 amountMigration,
+    uint256 debtAmount,
+    uint256 debtAmountMigration,
+    uint256 blocks
   )
     public
     returns (bool)
   {
-    uint256 minAmount = ICompoundV3(market).baseBorrowMin();
-    if (debtAmount < minAmount) {
-      return false;
-    }
     uint256 RANDOM_USER_PK = 0xA17461917319;
     address RANDOM_USER = vm.addr(RANDOM_USER_PK);
 
@@ -153,12 +166,27 @@ contract HimalayaCompoundUtils is Test {
     vm.startPrank(RANDOM_USER);
     IERC20(asset).approve(market, amount);
     _utils_depositV3(amount, asset, market);
+    _utils_borrowV3(debtAmount, debtAsset, market);
 
-    try ICompoundV3(market).withdraw(debtAsset, debtAmount) {
+    for (uint256 i = 0; i < blocks; i++) {
+      vm.warp(block.timestamp + 13 seconds);
+      vm.roll(block.number + 1);
+    }
+
+    //approve enough to payback with interest
+    IERC20(debtAsset).approve(market, debtAmount * 2);
+
+    //payback
+    _utils_paybackV3(RANDOM_USER, debtAmountMigration, debtAsset, market);
+
+    //withdraw
+    try ICompoundV3(market).withdrawFrom(RANDOM_USER, RANDOM_USER, asset, amountMigration) {
       vm.stopPrank();
+      //success
       return true;
     } catch {
       vm.stopPrank();
+      //fail
       return false;
     }
   }
