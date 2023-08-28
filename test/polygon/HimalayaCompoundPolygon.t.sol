@@ -87,10 +87,12 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
     migration.himalaya = address(himalayaConnext_Polygon);
     migration.slippage = 50;
 
+    (uint8 v, bytes32 r, bytes32 s) = _utils_sign_migration(migration, ALICE_PK);
+
     //approve himalayaCompound as operator on V3 originChain
     ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);
 
-    himalayaCompound.beginXMigration(migration);
+    himalayaCompound.beginXMigration(migration, v, r, s);
     assertEq(IERC20(WETH_Polygon).balanceOf(address(himalayaCompound)), 0);
     assertEq(compoundV3.getDepositBalanceV3(ALICE, WETH_Polygon, cUSDCV3_Polygon), 0);
   }
@@ -111,6 +113,8 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
     migration.himalaya = address(himalayaCompound);
     migration.slippage = 50;
 
+    (uint8 v, bytes32 r, bytes32 s) = _utils_sign_migration(migration, ALICE_PK);
+
     //approve himalayaCompound as operator on V3
     vm.startPrank(ALICE);
     ICompoundV3(migration.toMarket).allow(address(himalayaCompound), true);
@@ -121,7 +125,7 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
     //approve
     IERC20(WETH_Polygon).approve(address(himalayaCompound), AMOUNT_SUPPLY_WETH);
 
-    bytes memory data = abi.encode(migration);
+    bytes memory data = abi.encode(migration, v, r, s);
     vm.expectRevert(HimalayaCompound.HimalayaCompound__onlyHimalayaConnext_notAuthorized.selector);
     himalayaCompound.receiveXMigration(data);
   }
@@ -142,6 +146,8 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
     migration.himalaya = address(himalayaCompound);
     migration.slippage = 50;
 
+    (uint8 v, bytes32 r, bytes32 s) = _utils_sign_migration(migration, ALICE_PK);
+
     //approve himalayaCompound as operator on V3
     vm.startPrank(ALICE);
     ICompoundV3(migration.toMarket).allow(address(himalayaCompound), true);
@@ -150,7 +156,7 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
     //mock connext behaviour by dealing and approving
     deal(WETH_Polygon, address(himalayaConnext), AMOUNT_SUPPLY_WETH);
 
-    bytes memory data = abi.encode(migration);
+    bytes memory data = abi.encode(migration, v, r, s);
     himalayaConnext.xReceive(
       0, migration.amount, address(migration.assetDest), migration.owner, POLYGON_DOMAIN, data
     );
@@ -180,12 +186,14 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
     migration.himalaya = address(himalayaCompound);
     migration.slippage = 50;
 
+    (uint8 v, bytes32 r, bytes32 s) = _utils_sign_migration(migration, ALICE_PK);
+
     //approve himalayaCompound as operator on V3
     vm.startPrank(ALICE);
     ICompoundV3(migration.toMarket).allow(address(himalayaCompound), true);
     vm.stopPrank();
 
-    bytes memory data = abi.encode(migration);
+    bytes memory data = abi.encode(migration, v, r, s);
     vm.expectEmit(true, true, true, true);
     emit BorrowFailed(migration.toMarket, address(migration.debtAssetDest), migration.debtAmount);
     himalayaConnext.xReceive(
@@ -242,6 +250,8 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
     migration.himalaya = address(himalayaConnext_Arbitrum);
     migration.slippage = 50;
 
+    (uint8 v, bytes32 r, bytes32 s) = _utils_sign_migration(migration, ALICE_PK);
+
     //approve himalayaCompound as operator on V3 originChain
     ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);
     IERC20(USDC_Polygon).approve(address(cUSDCV3_Polygon), debtAmount);
@@ -256,7 +266,7 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
         HimalayaCompound.HimalayaCompound__handleOutboundFromV3_invalidAmount.selector
       );
       vm.prank(ALICE);
-      himalayaCompound.beginXMigration(migration);
+      himalayaCompound.beginXMigration(migration, v, r, s);
     }
     //case 2: no amounts to migrate
     else if (collateralAmount == 0 && debtAmount == 0) {
@@ -265,7 +275,7 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
         HimalayaCompound.HimalayaCompound__handleOutboundFromV3_invalidAmount.selector
       );
       vm.prank(ALICE);
-      himalayaCompound.beginXMigration(migration);
+      himalayaCompound.beginXMigration(migration, v, r, s);
     }
     //case 3: user tries to make his position unhealthy
     else if (
@@ -279,10 +289,10 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
     ) {
       vm.expectRevert();
       vm.prank(ALICE);
-      himalayaCompound.beginXMigration(migration);
+      himalayaCompound.beginXMigration(migration, v, r, s);
     } else {
       vm.prank(ALICE);
-      himalayaCompound.beginXMigration(migration);
+      himalayaCompound.beginXMigration(migration, v, r, s);
       assertEq(IERC20(WETH_Polygon).balanceOf(address(himalayaCompound)), 0);
       assertEq(
         compoundV3.getDepositBalanceV3(ALICE, WETH_Polygon, cUSDCV3_Polygon),
@@ -340,13 +350,15 @@ contract HimalayaCompoundPolygonUnitTests is Utils {
     migration.himalaya = address(himalayaConnext_Polygon);
     migration.slippage = 50;
 
+    (uint8 v, bytes32 r, bytes32 s) = _utils_sign_migration(migration, ALICE_PK);
+
     //approve himalayaCompound as operator on V3 originChain
     ICompoundV3(migration.fromMarket).allow(address(himalayaCompound), true);
     //approve market to pull debtAsset to payback debt
     //debt may have grown due to interest
     IERC20(USDC_Polygon).approve(address(cUSDCV3_Polygon), AMOUNT_BORROW_USDC * 10);
 
-    himalayaCompound.beginXMigration(migration);
+    himalayaCompound.beginXMigration(migration, v, r, s);
     assertEq(IERC20(WETH_Polygon).balanceOf(address(himalayaCompound)), 0);
     assertEq(compoundV3.getDepositBalanceV3(ALICE, WETH_Polygon, cUSDCV3_Polygon), 0);
     assertEq(IERC20(USDC_Polygon).balanceOf(address(himalayaCompound)), 0);

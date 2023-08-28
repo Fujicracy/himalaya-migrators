@@ -14,6 +14,7 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IHimalayaMigrator} from "../src/interfaces/IHimalayaMigrator.sol";
 import {HimalayaCompound} from "../src/migrators/HimalayaCompound.sol";
 import {ICompoundV3} from "@fuji-v2/src/interfaces/compoundV3/ICompoundV3.sol";
+import {LibSignMigration, HimalayaPermits} from "../src/libraries/LibSignMigration.sol";
 
 contract HimalayaCompoundUtils is Test {
   event BorrowFailed(address toMarket, address debtAsset, uint256 debtAmount);
@@ -129,6 +130,23 @@ contract HimalayaCompoundUtils is Test {
   {
     ICompoundV3(cMarketV3).supply(asset, amount);
     success = true;
+  }
+
+  function _utils_sign_migration(
+    IHimalayaMigrator.Migration memory migration,
+    uint256 signerPrivateKey
+  )
+    internal
+    view
+    returns (uint8 v, bytes32 r, bytes32 s)
+  {
+    IHimalayaMigrator.Migration memory permit =
+      LibSignMigration.prepareMigrationStructForSigning(migration);
+    bytes32 structHash = LibSignMigration.getStructHashMigration(permit);
+    bytes32 digest = LibSignMigration.getHashTypedDataV4Digest(
+      HimalayaPermits(migration.himalaya).DOMAIN_SEPARATOR(), structHash
+    );
+    (v, r, s) = vm.sign(signerPrivateKey, digest);
   }
 
   function _utils_positionIsHealthy(
