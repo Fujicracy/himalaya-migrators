@@ -69,86 +69,6 @@ contract HimalayaCompoundUtils is Test {
     vm.label(cUSDCV3_Arbitrum, "cUSDCV3_Arbitrum");
   }
 
-  function addMarkets_mainnet() internal {
-    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
-
-    address[] memory marketsV2 = new address[](3);
-    marketsV2[0] = address(cETHV2);
-    marketsV2[1] = address(cUSDCV2);
-    marketsV2[2] = address(cUSDTV2);
-
-    address[] memory marketsV3 = new address[](2);
-    marketsV3[0] = cWETHV3;
-    marketsV3[1] = cUSDCV3;
-
-    hc.addMarketsV2(marketsV2);
-    hc.addMarketsV3(marketsV3);
-  }
-
-  function addMarkets_polygon() internal {
-    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
-
-    address[] memory marketsV3 = new address[](1);
-    marketsV3[0] = cUSDCV3_Polygon;
-
-    hc.addMarketsV3(marketsV3);
-  }
-
-  function addMarkets_arbitrum() internal {
-    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
-
-    address[] memory marketsV3 = new address[](1);
-    marketsV3[0] = cUSDCV3_Arbitrum;
-
-    hc.addMarketsV3(marketsV3);
-  }
-
-  function addMarketsDestChain_mainnet() internal {
-    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
-
-    uint48[] memory chainIds = new uint48[](2);
-    chainIds[0] = 137;
-    chainIds[1] = 42161;
-
-    address[] memory markets = new address[](2);
-    markets[0] = cUSDCV3_Polygon; //polygon cUSDCV3
-    markets[1] = cUSDCV3_Arbitrum; //arbitrum cUSDCV3
-
-    hc.addMarketsDestChain(chainIds, markets);
-  }
-
-  function addMarketsDestChain_arbitrum() internal {
-    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
-
-    uint48[] memory chainIds = new uint48[](3);
-    chainIds[0] = 137;
-    chainIds[1] = 1;
-    chainIds[2] = 1;
-
-    address[] memory markets = new address[](3);
-    markets[0] = cUSDCV3_Polygon; //polygon cUSDCV3
-    markets[1] = cUSDCV3; //mainnet cUSDCV3
-    markets[2] = cWETHV3; //mainnet cWETHV3
-
-    hc.addMarketsDestChain(chainIds, markets);
-  }
-
-  function addMarketsDestChain_polygon() internal {
-    HimalayaCompound hc = HimalayaCompound(payable(address(himalayaCompound)));
-
-    uint48[] memory chainIds = new uint48[](3);
-    chainIds[0] = 42161;
-    chainIds[1] = 1;
-    chainIds[2] = 1;
-
-    address[] memory markets = new address[](3);
-    markets[0] = cUSDCV3_Arbitrum; //arbitrum cUSDCV3
-    markets[1] = cUSDCV3; //mainnet cUSDCV3
-    markets[2] = cWETHV3; //mainnet cWETHV3
-
-    hc.addMarketsDestChain(chainIds, markets);
-  }
-
   function _utils_depositV2_mainnet(uint256 amount, address asset) internal {
     address cTokenAddr = address(cETHV2);
 
@@ -211,20 +131,33 @@ contract HimalayaCompoundUtils is Test {
     success = true;
   }
 
+  function _utils_paybackV3(
+    address user,
+    uint256 amount,
+    address debtAsset,
+    address cMarketV3
+  )
+    internal
+    returns (bool success)
+  {
+    // From Coment docs: 'supply' the base asset to repay an open borrow of the base asset.
+    ICompoundV3(cMarketV3).supplyFrom(user, user, debtAsset, amount);
+    success = true;
+  }
+
   function _utils_positionIsHealthy(
     address market,
     address asset,
     address debtAsset,
     uint256 amount,
-    uint256 debtAmount
+    uint256 amountMigration,
+    uint256 debtAmount,
+    uint256 debtAmountMigration,
+    uint256 blocks
   )
     public
     returns (bool)
   {
-    uint256 minAmount = ICompoundV3(market).baseBorrowMin();
-    if (debtAmount < minAmount) {
-      return false;
-    }
     uint256 RANDOM_USER_PK = 0xA17461917319;
     address RANDOM_USER = vm.addr(RANDOM_USER_PK);
 
@@ -233,12 +166,27 @@ contract HimalayaCompoundUtils is Test {
     vm.startPrank(RANDOM_USER);
     IERC20(asset).approve(market, amount);
     _utils_depositV3(amount, asset, market);
+    _utils_borrowV3(debtAmount, debtAsset, market);
 
-    try ICompoundV3(market).withdraw(debtAsset, debtAmount) {
+    for (uint256 i = 0; i < blocks; i++) {
+      vm.warp(block.timestamp + 13 seconds);
+      vm.roll(block.number + 1);
+    }
+
+    //approve enough to payback with interest
+    IERC20(debtAsset).approve(market, debtAmount * 2);
+
+    //payback
+    _utils_paybackV3(RANDOM_USER, debtAmountMigration, debtAsset, market);
+
+    //withdraw
+    try ICompoundV3(market).withdrawFrom(RANDOM_USER, RANDOM_USER, asset, amountMigration) {
       vm.stopPrank();
+      //success
       return true;
     } catch {
       vm.stopPrank();
+      //fail
       return false;
     }
   }

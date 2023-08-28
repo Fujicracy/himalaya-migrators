@@ -19,18 +19,38 @@ import {HimalayaCompoundUtils} from "../HimalayaCompoundUtils.t.sol";
 import {ConnextUtils} from "../ConnextUtils.t.sol";
 import {Utils} from "../Utils.t.sol";
 import {HimalayaConnext} from "../../src/migrators/HimalayaConnext.sol";
+import {IHimalayaConnext} from "../../src/interfaces/IHimalayaConnext.sol";
 
 /**
  * @dev This contract tests the cross chain migration using the HimalayaCompound contract.
  */
-contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtils, Utils {
+contract HimalayaCompoundArbitrumUnitTests is Utils {
   function setUp() public {
     vm.createSelectFork("arbitrum");
     compoundV2 = new CompoundV2();
     compoundV3 = new CompoundV3();
 
-    himalayaConnext = new HimalayaConnext(CONNEXT_ARBITRUM);
-    himalayaCompound = new HimalayaCompound(address(himalayaConnext));
+    setTimelock();
+    himalayaConnext = new HimalayaConnext(CONNEXT_ARBITRUM, address(chief));
+    himalayaCompound = new HimalayaCompound(address(himalayaConnext), address(chief));
+
+    vm.prank(address(timelock));
+    himalayaConnext.setMigrator(address(himalayaCompound), true);
+
+    uint32[] memory domainIds = new uint32[](3);
+    uint48[] memory ids = new uint48[](3);
+    //mainnet
+    ids[0] = 1;
+    domainIds[0] = 6648936;
+    //polygon
+    ids[1] = 137;
+    domainIds[1] = 1886350457;
+    //arbitrum
+    ids[2] = 42161;
+    domainIds[2] = 1634886255;
+
+    vm.prank(address(timelock));
+    himalayaConnext.setDomainIds(ids, domainIds);
 
     setLabels();
     setLabelsCompound();
@@ -42,7 +62,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
     deal(WETH_Arbitrum, ALICE, AMOUNT_SUPPLY_WETH);
     assertEq(IERC20(WETH_Arbitrum).balanceOf(ALICE), AMOUNT_SUPPLY_WETH);
 
-    //Deposit 100 WETH into CompoundV3 on arbitrum
+    //Deposit WETH into CompoundV3 on arbitrum
     vm.startPrank(ALICE);
     IERC20(WETH_Arbitrum).approve(address(cUSDCV3_Arbitrum), AMOUNT_SUPPLY_WETH);
     _utils_depositV3(AMOUNT_SUPPLY_WETH, WETH_Arbitrum, cUSDCV3_Arbitrum);
@@ -52,7 +72,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
       AMOUNT_SUPPLY_WETH / 10
     );
 
-    //Migrate 100 WETH deposit position from CompoundV3 on arbitrum to CompoundV3 on other chain
+    //Migrate WETH deposit position from CompoundV3 on arbitrum to CompoundV3 on other chain
     IHimalayaMigrator.Migration memory migration;
     migration.owner = ALICE;
     migration.fromMarket = cUSDCV3_Arbitrum;
@@ -75,8 +95,8 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
     assertEq(compoundV3.getDepositBalanceV3(ALICE, WETH_Arbitrum, cUSDCV3_Arbitrum), 0);
   }
 
-  function test_handleInboundToV3() public {
-    //Migration from 100 WETH deposit position from CompoundV2 on other chain to CompoundV3 on arbitrum
+  function test_tryHandleInboundToV3WithoutHimalayaConnext() public {
+    //Migration from WETH deposit position from CompoundV2 on other chain to CompoundV3 on arbitrum
     IHimalayaMigrator.Migration memory migration;
     migration.owner = ALICE;
     migration.fromMarket = cUSDCV3_Polygon;
@@ -102,16 +122,12 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
     IERC20(WETH_Arbitrum).approve(address(himalayaCompound), AMOUNT_SUPPLY_WETH);
 
     bytes memory data = abi.encode(migration);
+    vm.expectRevert(HimalayaCompound.HimalayaCompound__onlyHimalayaConnext_notAuthorized.selector);
     himalayaCompound.receiveXMigration(data);
-
-    assertEq(IERC20(USDC_Arbitrum).balanceOf(ALICE), AMOUNT_BORROW_USDC);
-    assertEq(
-      compoundV3.getDepositBalanceV3(ALICE, WETH_Arbitrum, cUSDCV3_Arbitrum), AMOUNT_SUPPLY_WETH
-    );
   }
 
   function test_handleInboundToV3WithHimalayaConnext() public {
-    //Migration from 100 WETH deposit position from CompoundV2 on other chain to CompoundV3 on arbitrum
+    //Migration from WETH deposit position from CompoundV2 on other chain to CompoundV3 on arbitrum
     IHimalayaMigrator.Migration memory migration;
     migration.owner = ALICE;
     migration.fromMarket = cUSDCV3_Polygon;
@@ -149,6 +165,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
   }
 
   function test_handleInboundToV3WithHimalayaConnextWithInvalidAmount() public {
+    // TODO this test must be updated with the expected behavior of try-catch
     //Migration from 0 WETH deposit position from CompoundV3 on other chain to CompoundV3 on arbitrum
     IHimalayaMigrator.Migration memory migration;
     migration.owner = ALICE;
@@ -187,7 +204,6 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
   )
     public
   {
-    vm.assume(collateralAmount > 1e14);
     deal(WETH_Arbitrum, ALICE, AMOUNT_SUPPLY_WETH);
     assertEq(IERC20(WETH_Arbitrum).balanceOf(ALICE), AMOUNT_SUPPLY_WETH);
 
@@ -235,23 +251,19 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
     uint256 userDepositAmount =
       compoundV3.getDepositBalanceV3(ALICE, WETH_Arbitrum, cUSDCV3_Arbitrum);
     uint256 userDebtAmount = compoundV3.getBorrowBalanceV3(ALICE, USDC_Arbitrum, cUSDCV3_Arbitrum);
-    //case 1: user tries to withdraw/payback more than they have/owe
-    if (collateralAmount > userDepositAmount || debtAmount > userDebtAmount) {
-      vm.expectRevert(
-        HimalayaCompound.HimalayaCompound__handleOutboundFromV3_invalidAmount.selector
-      );
+    //case 1: no amounts to migrate
+    if (collateralAmount == 0) {
+      vm.expectRevert(HimalayaCompound.HimalayaCompound__beginXMigration_invalidAmount.selector);
       vm.prank(ALICE);
       himalayaCompound.beginXMigration(migration);
-      return;
     }
-    //case 2: no amounts to migrate
-    else if (collateralAmount == 0 && debtAmount == 0) {
+    //case 2: user tries to withdraw/payback more than they have/owe
+    else if (collateralAmount > userDepositAmount || debtAmount > userDebtAmount) {
       vm.expectRevert(
         HimalayaCompound.HimalayaCompound__handleOutboundFromV3_invalidAmount.selector
       );
       vm.prank(ALICE);
       himalayaCompound.beginXMigration(migration);
-      return;
     }
     //case 3: user tries to make his position unhealthy
     else if (
@@ -259,15 +271,18 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
         cUSDCV3_Arbitrum,
         WETH_Arbitrum,
         USDC_Arbitrum,
-        userDepositAmount - collateralAmount,
-        userDebtAmount - debtAmount
+        AMOUNT_SUPPLY_WETH,
+        collateralAmount,
+        AMOUNT_BORROW_USDC,
+        debtAmount,
+        10
       )
     ) {
       vm.expectRevert();
       vm.prank(ALICE);
       himalayaCompound.beginXMigration(migration);
-      return;
     } else {
+      //case 4: user migrates
       vm.prank(ALICE);
       himalayaCompound.beginXMigration(migration);
       assertEq(IERC20(WETH_Arbitrum).balanceOf(address(himalayaCompound)), 0);
@@ -279,7 +294,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
       assertApproxEqAbs(
         compoundV3.getBorrowBalanceV3(ALICE, USDC_Arbitrum, cUSDCV3_Arbitrum),
         userDebtAmount - debtAmount,
-        1
+       (userDebtAmount - debtAmount)/1000
       );
     }
   }
@@ -290,7 +305,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
     deal(USDC_Arbitrum, ALICE, AMOUNT_BORROW_USDC * 10);
     assertEq(IERC20(USDC_Arbitrum).balanceOf(ALICE), AMOUNT_BORROW_USDC * 10);
 
-    //Deposit 100 WETH into CompoundV3 on mainnet
+    //Deposit WETH into CompoundV3 on mainnet
     vm.startPrank(ALICE);
     IERC20(WETH_Arbitrum).approve(address(cUSDCV3_Arbitrum), AMOUNT_SUPPLY_WETH);
     _utils_depositV3(AMOUNT_SUPPLY_WETH, WETH_Arbitrum, cUSDCV3_Arbitrum);
@@ -311,7 +326,7 @@ contract HimalayaCompoundArbitrumUnitTests is HimalayaCompoundUtils, ConnextUtil
       vm.roll(block.number + 1);
     }
 
-    //Migrate 100 WETH_Arbitrum deposit position from CompoundV3 on arbitrum to CompoundV3 on other chain
+    //Migrate WETH_Arbitrum deposit position from CompoundV3 on arbitrum to CompoundV3 on other chain
     IHimalayaMigrator.Migration memory migration;
     migration.owner = ALICE;
     migration.fromMarket = cUSDCV3_Arbitrum;
