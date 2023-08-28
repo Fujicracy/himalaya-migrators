@@ -38,7 +38,11 @@ library LibSignMigration {
   }
 
   /// @notice Returns the structhash of a permit-withdraw.
-  function getStructHashMigration(IHimalayaMigrator.Migration memory permit) public pure returns (bytes32) {
+  function getStructHashMigration(IHimalayaMigrator.Migration memory permit)
+    public
+    pure
+    returns (bytes32)
+  {
     return keccak256(abi.encode(MigrationPermitBase.MIGRATION_TYPEHASH, permit));
   }
 
