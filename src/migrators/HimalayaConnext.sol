@@ -15,6 +15,7 @@ import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/Safe
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {IConnext, IXReceiver} from "@fuji-v2/src/interfaces/connext/IConnext.sol";
 import {SystemAccessControl} from "@fuji-v2/src/access/SystemAccessControl.sol";
+import {IHimalayaMigrator} from "../interfaces/IHimalayaMigrator.sol";
 
 contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
   using SafeERC20 for IERC20;
@@ -22,6 +23,15 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
   //@dev custom error
   error HimalayaConnext__onlyAllowedMigrator_notAuthorized();
   error HimalayaConnext__setDomainIds_invalidInput();
+  error HimalayaConnext__setHimalayaConnext_invalidInput();
+  error HimalayaConnext__setMigrator_invalidInput();
+  error HimalayaConnext__setDomainIds_invalidInput();
+
+  /// @dev events
+  event SetHimalayaConnext(uint48 chainId, address himalayaConnext, bool active);
+  event SetMigrator(address migrator, bool active);
+  event SetDomainIds(uint48[] chainIds, uint32[] domainIds);
+  event ReceiveXMigrationFailed(bytes32 transferId, bytes callData);
 
   IConnext public immutable connext;
 
@@ -29,7 +39,7 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
   mapping(uint256 => address) public himalayaConnexts;
 
   //chainId => domainIdConnext
-  mapping(uint256 => uint32) public domainIds;
+  mapping(uint48 => uint32) public domainIds;
 
   //migrator => isAllowed
   mapping(address => bool) public allowedMigrator;
@@ -79,10 +89,11 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
     migration.assetDest.safeApprove(migration.himalaya, migration.amount);
 
     //Handle inbound
-    //TODO this call should be wrapped in a try-catch.
-    // If catch emit an event and move the funds to a seperate contract and make them claimable by the user.
-    // perhaps a FujiV2 `Borrowingvault.deposit()`
-    IHimalayaMigrator(migration.himalaya).receiveXMigration(callData);
+    try IHimalayaMigrator(migration.himalaya).receiveXMigration(callData) {}
+    catch {
+      migration.assetDest.safeTransfer(migration.owner, migration.amount);
+      emit ReceiveXMigrationFailed(transferId, callData);
+    }
 
     return abi.encode(transferId);
   }
@@ -122,26 +133,35 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
   }
 
   function setHimalayaConnext(
-    uint32 domainId,
+    uint48 chainId,
     address himalayaConnext,
     bool active
   )
     external
     onlyTimelock
   {
-    if (active) {
-      himalayaConnexts[domainId] = himalayaConnext;
-    } else {
-      himalayaConnexts[domainId] = address(0);
+    if (chainId == 0 || himalayaConnext == address(0)) {
+      revert HimalayaConnext__setHimalayaConnext_invalidInput();
     }
+
+    if (active) {
+      himalayaConnexts[chainId] = himalayaConnext;
+    } else {
+      himalayaConnexts[chainId] = address(0);
+    }
+    emit SetHimalayaConnext(chainId, himalayaConnext, active);
   }
 
   function setMigrator(address migrator, bool active) external onlyTimelock {
+    if (migrator == address(0)) {
+      revert HimalayaConnext__setMigrator_invalidInput();
+    }
     allowedMigrator[migrator] = active;
+    emit SetMigrator(migrator, active);
   }
 
   function setDomainIds(
-    uint256[] memory chainIds_,
+    uint48[] memory chainIds_,
     uint32[] memory domainIds_
   )
     external
@@ -151,8 +171,12 @@ contract HimalayaConnext is IXReceiver, IHimalayaConnext, SystemAccessControl {
       revert HimalayaConnext__setDomainIds_invalidInput();
     }
     for (uint256 i = 0; i < chainIds_.length; i++) {
+      if (chainIds_[i] == 0 || domainIds_[i] == 0) {
+        revert HimalayaConnext__setDomainIds_invalidInput();
+      }
       domainIds[chainIds_[i]] = domainIds_[i];
     }
+    emit SetDomainIds(chainIds_, domainIds_);
   }
 
   //TODO Add bumpTransfer refer to:
